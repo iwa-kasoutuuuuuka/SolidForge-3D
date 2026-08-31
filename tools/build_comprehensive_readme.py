@@ -105,6 +105,10 @@ def main():
 13. [🧪 単体テストスイート完全リファレンス (Unit Tests Reference - 全35件)](#13-単体テストスイート完全リファレンス-unit-tests-reference---全35件)
 14. [❓ よくある質問・トラブルシューティング全60選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全60選-faq--troubleshooting)
 15. [📄 ライセンス & 謝辞 (License & Acknowledgements)](#15-ライセンス--謝辞-license--acknowledgements)
+   - [15.1 MIT ライセンス条文 (MIT License Full Text)](#151-mit-ライセンス条文-mit-license-full-text)
+   - [15.2 ライセンスの許諾範囲と利用条件 (Permissions & Conditions)](#152-ライセンスの許諾範囲と利用条件-permissions--conditions)
+   - [15.3 サードパーティ製ライブラリおよびコンポーネントのライセンス体系](#153-サードパーティ製ライブラリおよびコンポーネントのライセンス体系)
+   - [15.4 謝辞 (Acknowledgements)](#154-謝辞-acknowledgements)
 """)
 
     # Chapter 1 & 2
@@ -1151,18 +1155,63 @@ AESUB Blue 等の「昇華性（消える）スプレー」は、塗布後 2〜4
 
 ## 15. 📄 ライセンス & 謝辞 (License & Acknowledgements)
 
-### 15.1 ライセンス
-本プロジェクトは **MIT ライセンス** の下で公開されています。商用・非商用を問わず自由にご利用、改変、再配布が可能です。詳細についてはリポジトリ内の `LICENSE` ファイルをご確認ください。
+### 15.1 MIT ライセンス条文 (MIT License Full Text)
 
-### 15.2 謝辞・主要オープンソースライブラリ
-SolidForge 3D は、以下の卓越したオープンソースプロジェクトおよび研究成果の上に構築されています：
-- **COLMAP**: Johannes L. Schönberger et al. (Structure-from-Motion & Multi-View Stereo)
-- **OpenMVS**: Dan Cernea et al. (Open Multi-View Stereo Reconstruction Library)
-- **PySide6 / Qt6**: The Qt Company (Cross-platform GUI Framework)
-- **Trimesh**: Michael Dawson-Haggerty et al. (Pure Python Triangle Mesh Library)
-- **OpenCV**: OpenCV Team (Open Source Computer Vision Library & ArUco Module)
-- **PyTorch**: Meta AI & PyTorch Community (Deep Learning & CUDA Tensor Acceleration)
-- **OrcaSlicer**: SoftFever et al. (Next-generation 3D Printing Slicer)
+本ソフトウェア（SolidForge 3D）は、**MIT License（MIT ライセンス）** の下で公開・提供されています。
+
+```text
+MIT License
+
+Copyright (c) 2026 SolidForge 3D Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### 15.2 ライセンスの許諾範囲と利用条件 (Permissions & Conditions)
+
+MIT ライセンスに基づき、本ソフトウェアは誰でも無償で以下の権利を行使できます：
+
+| 区分 | 許諾内容・条件 | 詳細説明 |
+| :--- | :--- | :--- |
+| **✅ 商用利用 (Commercial Use)** | 自由（制限なし） | 営利企業での製品開発、製造治具の製作、リバースエンジニアリング、スキャン受託サービス、有料アプリケーションへの組み込み等に自由にご利用いただけます。 |
+| **✅ 修正・改変 (Modification)** | 自由（制限なし） | ソースコードの改変、機能追加、アルゴリズムの差し替え、UIのカスタマイズ等を自由に行えます。 |
+| **✅ 再配布 (Distribution)** | 自由（制限なし） | 原型または改変したコードを、バイナリ形式またはソース形式で第三者に再配布・販売できます。 |
+| **✅ 私的使用 (Private Use)** | 自由（制限なし） | 個人利用、趣味、研究開発、社内専用ツールとして自由に利用できます。 |
+| **⚠️ 必須要件 (Condition)** | 著作権表示の保持 | 本ソフトウェアのソースコードを再配布・改変配布する場合、上記の**著作権表示（Copyright notice）および許諾表示（Permission notice）**を複製物または実質的部分に含める必要があります。 |
+| **❌ 免責事項 (No Warranty)** | 完全無保証 | 本ソフトウェアは「現状有姿（AS IS）」で提供され、商品性、特定目的への適合性、権利非侵害を含むいかなる明示・黙示の保証も行いません。 |
+
+### 15.3 サードパーティ製ライブラリおよびコンポーネントのライセンス体系
+
+SolidForge 3D が利用している主要なオープンソースコンポーネントおよびアルゴリズムのライセンス一覧です：
+
+| コンポーネント | 用途・機能 | ライセンス | 配布・利用における留意事項 |
+| :--- | :--- | :--- | :--- |
+| **COLMAP** | SfM / MVS 疎点群再構築 | 新BSDライセンス (BSD 3-Clause) | バンドル調整、SiftGPU特徴抽出エンジン。商用利用可能。 |
+| **OpenMVS** | 高密度点群・メッシュ曲面復元 | AGPLv3 / 独自デュアル | メッシュ再構築演算。外部サブプロセスとして疎結合連携。 |
+| **PySide6 (Qt6)** | デスクトップ GUI フレームワーク | LGPLv3 / 商業ライセンス | 動的リンク（pip wheel）として利用。商用利用可能。 |
+| **PyTorch (CUDA)** | GPU直接テンソル・AI演算 | BSD 3-Clause (Meta AI) | Conv2Dラプラシアン、TensorRT FP16バッチ処理。 |
+| **OpenCV** | 画像処理・ArUco マーカー検出 | Apache 2.0 License | 1:1 実寸ミリメートル幾何校正、エッジ処理。 |
+| **Trimesh** | 3D メッシュ幾何解析・水密化 | MIT License | RANSAC平面スライス、SLA中空化、Watertight修復。 |
+| **OrcaSlicer** | 3Dプリントスライサー連携 | GNU AGPLv3 (SoftFever) | 外部アプリケーションとしてCLI引数起動連携。 |
+
+### 15.4 謝辞 (Acknowledgements)
+本プロジェクトは、世界中のコンピュータビジョン研究者、3Dプリンティングコミュニティ、オープンソース開発者の皆様の卓越した研究開発と貢献により実現いたしました。心より感謝申し上げます。
 
 ---
 
