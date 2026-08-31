@@ -197,11 +197,18 @@ class MainWindow(QMainWindow):
         scroll.setStyleSheet("QScrollArea { border: none; background-color: transparent; }")
 
         container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(4, 0, 4, 0)
-        layout.setSpacing(10)
+        # 1. Multi-GPU & ハードウェアクラスタグループ
+        gpu_group = QGroupBox("⚡ GPU & Multi-GPU クラスタ設定")
+        gpu_layout = QFormLayout(gpu_group)
+        gpu_layout.setSpacing(8)
 
-        # 1. RTX 5080 AI TensorRT 超解像 & ブレ除去グループ
+        self.combo_gpu_device = QComboBox()
+        self._populate_gpu_dropdown()
+        self.combo_gpu_device.currentIndexChanged.connect(self._on_gpu_selection_changed)
+        gpu_layout.addRow("計算デバイス:", self.combo_gpu_device)
+        layout.addWidget(gpu_group)
+
+        # 2. RTX 5080 AI TensorRT 超解像 & ブレ除去グループ
         ai_group = QGroupBox("🤖 RTX 5080 TensorRT AI画質向上")
         ai_layout = QFormLayout(ai_group)
         ai_layout.setSpacing(8)
@@ -353,6 +360,39 @@ class MainWindow(QMainWindow):
         )
         # 3Dカメラ軌跡を更新
         self.trajectory_widget.simulate_demo_trajectory(with_gap=False)
+
+    def _populate_gpu_dropdown(self):
+        """利用可能なGPUをドロップダウンに列挙"""
+        from solidforge.core.hardware_optimizer import HARDWARE_OPTIMIZER
+        self.combo_gpu_device.clear()
+        gpus = HARDWARE_OPTIMIZER.list_all_gpus()
+
+        if len(gpus) > 1:
+            total_vram = sum(g.vram_total_mb for g in gpus) / 1024
+            self.combo_gpu_device.addItem(
+                f"⚡ 全GPU並列クラスタ ({len(gpus)}基 合計{total_vram:.0f}GB VRAM) [推奨]",
+                "ALL"
+            )
+            for g in gpus:
+                self.combo_gpu_device.addItem(
+                    f"GPU {g.device_id}: {g.gpu_name} ({g.vram_total_mb/1024:.0f}GB)",
+                    g.device_id
+                )
+        else:
+            g = gpus[0]
+            self.combo_gpu_device.addItem(f"⚡ GPU 0: {g.gpu_name} ({g.vram_total_mb/1024:.0f}GB)", 0)
+
+    def _on_gpu_selection_changed(self, index: int):
+        data = self.combo_gpu_device.currentData()
+        if data == "ALL":
+            self.config.multi_gpu.mode = "ALL_GPUS"
+            from solidforge.core.hardware_optimizer import HARDWARE_OPTIMIZER
+            gpus = HARDWARE_OPTIMIZER.list_all_gpus()
+            self.config.multi_gpu.active_device_indices = [g.device_id for g in gpus]
+        else:
+            dev_id = int(data or 0)
+            self.config.multi_gpu.mode = "CUSTOM"
+            self.config.multi_gpu.active_device_indices = [dev_id]
 
     def _on_start_forge_clicked(self):
         if PIPELINE.is_running:

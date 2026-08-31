@@ -25,6 +25,19 @@ class CameraSourceConfig:
 
 
 @dataclass
+class MultiGPUConfig:
+    """マルチGPU (複数GPU搭載PC) 設定"""
+    mode: Literal["ALL_GPUS", "PRIMARY_ONLY", "CUSTOM"] = "ALL_GPUS"
+    active_device_indices: List[int] = field(default_factory=lambda: [0])
+    
+    def get_colmap_gpu_index_str(self) -> str:
+        """COLMAPの--SiftExtraction.gpu_index引数用文字列 (例: '0,1') を返します"""
+        if self.mode == "PRIMARY_ONLY" or not self.active_device_indices:
+            return "0"
+        return ",".join(str(idx) for idx in self.active_device_indices)
+
+
+@dataclass
 class Insta360Config:
     """Insta360 (X5 / X4 / Ace Pro 2 / Link 2) 設定"""
     model_name: str = "Insta360 Ace Pro 2"
@@ -127,6 +140,7 @@ class AppConfig:
     ai_enhancement: AIEnhancementConfig = field(default_factory=AIEnhancementConfig)
     camera: CameraSourceConfig = field(default_factory=CameraSourceConfig)
     insta360: Insta360Config = field(default_factory=Insta360Config)
+    multi_gpu: MultiGPUConfig = field(default_factory=MultiGPUConfig)
     
     default_export_format: str = "STL (.stl)"
 

@@ -8,17 +8,17 @@
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6%20Qt6-41CD52?style=for-the-badge&logo=qt&logoColor=white)](https://pypi.org/project/PySide6/)
-[![CUDA RTX 5080 Extreme](https://img.shields.io/badge/GPU-RTX%205080%20Blackwell%20FP16-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
+[![CUDA RTX 5080 Extreme](https://img.shields.io/badge/GPU-RTX%205080%20%2B%20Multi--GPU%20Cluster-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
 [![OrcaSlicer Ready](https://img.shields.io/badge/Slicer-OrcaSlicer%20%2F%20Bambu%20Studio-00e5ff?style=for-the-badge)](https://github.com/SoftFever/OrcaSlicer)
 [![Direct to Print](https://img.shields.io/badge/3D%20Print-Vectorized%20RANSAC-ffd600?style=for-the-badge)](https://en.wikipedia.org/wiki/STL_(file_format))
-[![Tests](https://img.shields.io/badge/Unit%20Tests-27%2F27%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-30%2F30%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
 
 ---
 
 ## 🌟 概要 (Overview)
 
-**SolidForge 3D** は、最新の **Insta360 X5 / X4 / Ace Pro 2** や **SONY α / ZV-E10**、**スマートフォン（POCO F6 Pro / iPhone / Android）**、**Canon / Nikon 等の一眼レフ** を統合し、最新の **NVIDIA GeForce RTX 5080 GPU**（CUDAコア + 第5世代Tensor Cores / GDDR7高速メモリ）の計算能力で、被写体の周囲を手持ち撮影した画像から実寸1:1スケールの完全水密（Watertight）な3Dプリント用モデル（STL/OBJ/PLY/GLTF）を生成し、**OrcaSlicer や Bambu Studio などの3Dスライサーへ自動配置・直行起動**できるWindowsデスクトップアプリケーションです。
+**SolidForge 3D** は、最新の **NVIDIA GeForce RTX 5080** および **複数GPU搭載PC（Multi-GPU CUDA クラスタ）** の計算資源を結集し、**Insta360 X5 / X4 / Ace Pro 2** や **SONY α / ZV-E10**、**スマートフォン（POCO F6 Pro / iPhone / Android）**、**Canon / Nikon 等の一眼レフ** から、実寸1:1スケールの完全水密（Watertight）な3Dプリント用モデル（STL/OBJ/PLY/GLTF）を超高速生成して **OrcaSlicer / Bambu Studio 等へ自動配置**できるWindowsデスクトップアプリケーションです。
 
 ---
 
@@ -203,7 +203,7 @@ SolidForge 3D/
 │       │   ├── log_terminal.py         # リアルタイムログ & GPUテレメトリHUD
 │       │   └── mesh_viewer_widget.py   # 3Dプリント診断レポート & ビューア
 │       └── main_window.py      # メインGUIウィンドウ
-└── tests/                      # 単体テスト (27件全件合格)
+└── tests/                      # 単体テスト (30件全件合格)
     ├── test_quality_gate.py
     ├── test_post_processor.py
     ├── test_camera_manager.py
@@ -212,6 +212,7 @@ SolidForge 3D/
     ├── test_ai_enhancer.py
     ├── test_trajectory_analyzer.py
     ├── test_gpu_accelerator.py
+    ├── test_multi_gpu.py
     └── test_security_and_edge_cases.py
 ```
 
@@ -347,7 +348,11 @@ python main.py
 python -m unittest discover tests
 ```
 
-### テストスイート一覧 (27件全件合格)
+### テストスイート一覧 (30件全件合格)
+- **`test_multi_gpu.py` (3件)**:
+  - `test_multi_gpu_config_colmap_string`: COLMAP用複数GPU引数文字列生成
+  - `test_hardware_optimizer_list_all_gpus`: 全GPU個別テレメトリ列挙
+  - `test_multi_gpu_batch_enhancement_execution`: 複数GPU並列AIバッチ分散推論
 - **`test_gpu_accelerator.py` (3件)**:
   - `test_gpu_blur_score_calculation`: GPU直接ラプラシアン鮮鋭度演算
   - `test_gpu_enhance_batch_fp16`: GPU FP16 並列バッチエンハンス

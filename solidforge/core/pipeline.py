@@ -163,9 +163,10 @@ class ReconstructionPipeline(QObject):
 
         hw = self.config.hardware
 
-        # Stage 1: 特徴量抽出 (SiftGPU)
-        self.progress_updated.emit(15, "SiftGPU 特徴量抽出中 (RTX 5080)...")
-        self.log_emitted.emit("[COLMAP] SiftGPU 特徴点抽出を実行中 (GPU Index: 0, Max Size: 4096)...")
+        # Stage 1: 特徴量抽出 (SiftGPU / Multi-GPU)
+        gpu_indices_str = self.config.multi_gpu.get_colmap_gpu_index_str()
+        self.progress_updated.emit(15, f"SiftGPU 特徴量抽出中 (GPU: {gpu_indices_str})...")
+        self.log_emitted.emit(f"[COLMAP] SiftGPU 特徴点抽出を実行中 (GPU Index: {gpu_indices_str}, Max Size: 4096)...")
         cmd_extract = [
             self.config.colmap_binary, "feature_extractor",
             "--database_path", str(database_path),
@@ -173,20 +174,20 @@ class ReconstructionPipeline(QObject):
             "--ImageReader.camera_model", "OPENCV",
             "--ImageReader.single_camera", "1",
             "--SiftExtraction.use_gpu", "1" if hw.colmap_use_gpu else "0",
-            "--SiftExtraction.gpu_index", str(hw.colmap_gpu_index),
+            "--SiftExtraction.gpu_index", gpu_indices_str,
             "--SiftExtraction.max_image_size", "4096",
             "--SiftExtraction.peak_threshold", "0.006",
         ]
         self._exec_cmd(cmd_extract)
 
-        # Stage 2: 特徴量マッチング (Exhaustive Matcher / CUDA)
-        self.progress_updated.emit(30, "CUDA 並列特徴点マッチング中...")
-        self.log_emitted.emit("[COLMAP] CUDA Exhaustive Feature Matching 実行中...")
+        # Stage 2: 特徴量マッチング (Exhaustive Matcher / Multi-GPU CUDA)
+        self.progress_updated.emit(30, f"CUDA 並列特徴点マッチング中 (GPU: {gpu_indices_str})...")
+        self.log_emitted.emit(f"[COLMAP] CUDA Exhaustive Feature Matching 実行中 (GPU: {gpu_indices_str})...")
         cmd_match = [
             self.config.colmap_binary, "exhaustive_matcher",
             "--database_path", str(database_path),
             "--SiftMatching.use_gpu", "1" if hw.colmap_use_gpu else "0",
-            "--SiftMatching.gpu_index", str(hw.colmap_gpu_index),
+            "--SiftMatching.gpu_index", gpu_indices_str,
         ]
         self._exec_cmd(cmd_match)
 

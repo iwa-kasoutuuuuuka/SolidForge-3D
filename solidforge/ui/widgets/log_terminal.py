@@ -112,12 +112,18 @@ class LogTerminalWidget(QWidget):
         self.append_log("SolidForge 3D 極限GPUアクセラレーション初期化完了。パイプライン待機中。")
 
     def _update_telemetry(self):
-        """GPUおよびVRAMテレメトリを更新"""
+        """GPUおよびVRAMテレメトリを更新 (Multi-GPU対応)"""
         try:
             from solidforge.core.hardware_optimizer import HARDWARE_OPTIMIZER
-            t = HARDWARE_OPTIMIZER.get_telemetry()
-            self.gpu_badge.setText(f"⚡ {t.gpu_name} ({t.cuda_compute_capability})")
-            self.vram_meter.setText(f"VRAM: {t.vram_used_mb:,} / {t.vram_total_mb:,} MB ({t.vram_usage_percent}%)")
+            all_gpus = HARDWARE_OPTIMIZER.list_all_gpus()
+            if len(all_gpus) > 1:
+                self.gpu_badge.setText(f"⚡ Multi-GPU クラスタ ({len(all_gpus)}基 稼働中)")
+                vram_strs = [f"GPU{g.device_id}: {g.vram_used_mb/1024:.1f}/{g.vram_total_mb/1024:.0f}GB ({g.vram_usage_percent}%)" for g in all_gpus]
+                self.vram_meter.setText(" | ".join(vram_strs))
+            else:
+                t = all_gpus[0]
+                self.gpu_badge.setText(f"⚡ {t.gpu_name} ({t.cuda_compute_capability})")
+                self.vram_meter.setText(f"VRAM: {t.vram_used_mb:,} / {t.vram_total_mb:,} MB ({t.vram_usage_percent}%)")
         except Exception:
             pass
 
