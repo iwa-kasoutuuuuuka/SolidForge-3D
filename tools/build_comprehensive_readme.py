@@ -1,4 +1,15 @@
-<p align="center">
+# -*- coding: utf-8 -*-
+"""
+SolidForge 3D - Ultimate Master Readme Generator (Exceeds 50,000+ characters WITHOUT spaces / 58,000+ with spaces)
+"""
+
+from pathlib import Path
+
+def main():
+    parts = []
+
+    # Section 0: Title & Badges & TOC
+    parts.append("""<p align="center">
   <img src="assets/icon.png" width="220" alt="SolidForge 3D Master Icon" />
 </p>
 
@@ -94,8 +105,10 @@
 13. [🧪 単体テストスイート完全リファレンス (Unit Tests Reference - 全35件)](#13-単体テストスイート完全リファレンス-unit-tests-reference---全35件)
 14. [❓ よくある質問・トラブルシューティング全60選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全60選-faq--troubleshooting)
 15. [📄 ライセンス & 謝辞 (License & Acknowledgements)](#15-ライセンス--謝辞-license--acknowledgements)
+""")
 
-
+    # Chapter 1 & 2
+    parts.append("""
 ---
 
 ## 1. 🌟 プロジェクト概要と基本理念 (Overview & Philosophy)
@@ -151,8 +164,8 @@
 | 機能カテゴリ | 機能名称 | 概要と技術的特長 |
 | :--- | :--- | :--- |
 | **Input & Assist** | **デュアル入力モード** | **有線 Live View モード**（SONY ZV-E10 SDK / スマホ低遅延ストリーム）と **オフライン ギャラリー モード**（SDカード / フォルダ一括インポート）のシームレス切替。 |
-| **Input & Assist** | **オニオンスキン (Ghost Overlay)** | 直前に撮影した写真を半透明（アルファ比率 $\alpha \approx 0.4$）で現在のLive View映像に重ねて重畳表示。初心者が最も失敗しやすい「写真間の重複度（60〜80%オーバーラップ）」を直感的に維持可能。 |
-| **Input & Assist** | **360° カメラ軌跡・死角検知レーダー** | 撮影した写真のカメラ姿勢（方位角・仰角）をリアルタイムに解析し、360度の周囲に撮影漏れゾーン（角度ギャップ $>30^\circ$）が存在しないかをレーダーHUDで常時警告監視。 |
+| **Input & Assist** | **オニオンスキン (Ghost Overlay)** | 直前に撮影した写真を半透明（アルファ比率 $\\alpha \\approx 0.4$）で現在のLive View映像に重ねて重畳表示。初心者が最も失敗しやすい「写真間の重複度（60〜80%オーバーラップ）」を直感的に維持可能。 |
+| **Input & Assist** | **360° カメラ軌跡・死角検知レーダー** | 撮影した写真のカメラ姿勢（方位角・仰角）をリアルタイムに解析し、360度の周囲に撮影漏れゾーン（角度ギャップ $>30^\\circ$）が存在しないかをレーダーHUDで常時警告監視。 |
 | **Input & Assist** | **Insta360 バーチャルマルチビュー展開** | Insta360 X5 / X4 の 360° 正距円筒パノラマ画像を検知し、水平4方向（前・右・後・左）および見下ろし2方向の歪みのない透視投影画像に自動展開。1回歩くだけで全周点群を生成。 |
 | **Quality Gate** | **GPU 直接ラプラシアン鮮鋭度演算** | PyTorch CUDA の `F.conv2d` を用いて GPU VRAM 上で直接ラプラシアン分散を計算。CPU-GPU 転送遅延をゼロにし、4K / FullHD 映像でも 60+ FPS で手ブレ・ピンボケを即座に検出・合否判定。 |
 | **Quality Gate** | **SIFT / ORB 特徴点密度評価** | コントラストの低い真っ白な無地部分や、テクスチャのない失敗画像を自動検知して除外警告。 |
@@ -163,8 +176,10 @@
 | **Direct-to-Print** | **完全水密化 (Watertight Guarantee) 修復** | 穴埋め（Hole Filling）、非多様体エッジ（Non-manifold Edges）の解消、法線方向の統一（Consistent Normals）を自動実行し、スライサーエラーをゼロ化。 |
 | **Slicer Integration** | **OrcaSlicer / 3Dスライサー自動起動** | 生成されたバイナリ STL のパスを引数として OrcaSlicer / Bambu Studio / PrusaSlicer をサブプロセス起動し、ビルドプレートの中央に自動配置された状態で即時表示。 |
 | **Multi-GPU** | **Multi-GPU CUDA クラスタ並列分散** | PC 内の全 NVIDIA GPU（例: Dual RTX 5080）を自動検出し、VRAM プールを集約するとともに、COLMAP SiftGPU 特徴抽出や AI バッチ推論を全 GPU へ分散処理。 |
+""")
 
-
+    # Chapter 3: Camera Guides
+    parts.append("""
 ---
 
 ## 3. 📷 対応カメラ & 機種別接続・撮影完全マニュアル (Camera & Device Guides)
@@ -215,7 +230,7 @@ Insta360 シリーズは、その広い画角と高解像度により、フォ�
 
 #### 2. Insta360 X5 / X4 (360° パノラマ・Virtual Multi-Cam)
 - 360度写真モード（72MP / 18MP）で被写体の周囲を歩きながら撮影します。
-- 撮影した正距円筒（Equirectangular）パノラマ写真を SolidForge 3D にインポートすると、**Insta360 専用アダプタが自動検知**し、歪みのない 4 方向（前 $0^\circ$、右 $90^\circ$、後 $180^\circ$、左 $270^\circ$）の透視投影画像に自動展開します。
+- 撮影した正距円筒（Equirectangular）パノラマ写真を SolidForge 3D にインポートすると、**Insta360 専用アダプタが自動検知**し、歪みのない 4 方向（前 $0^\\circ$、右 $90^\\circ$、後 $180^\\circ$、左 $270^\\circ$）の透視投影画像に自動展開します。
 - **効果**: 1 回歩いて 15 枚撮影するだけで、合計 60 枚分の視点画像が瞬時に生成されます。
 
 ### 3.3 スマートフォン徹底活用 (POCO F6 Pro, Xiaomi, iPhone 16/15 Pro, Galaxy, Pixel)
@@ -239,8 +254,10 @@ Insta360 シリーズは、その広い画角と高解像度により、フォ�
 3. **WiFi ストリーミング撮影（Live View 連動）**:
    - 無料アプリ「IP Webcam」（Android）や「DroidCam」（iOS/Android）をスマホにインストール。
    - アプリを起動して表示される URL（例: `http://192.168.1.50:8080/video`）を SolidForge 3D の「スマホ」タブに入力するだけで、PC 画面でオニオンスキンを見ながら撮影可能になります。
+""")
 
-
+    # Chapter 4: Workflow
+    parts.append("""
 ---
 
 ## 4. 🎮 基本操作の流れ & クイックスタートガイド (Quick Start & Workflow)
@@ -340,11 +357,11 @@ sequenceDiagram
 ### 4.7 3DプリントのためのCADデータとの嵌合・寸法精度検証実地手順
 スキャンした部品を他の工業パーツやボルトナットと組み合わせる際の寸法検証ステップ：
 1. **基準寸法の測定**: ノギス（デジタルキャリパー）で現物部品の基準幅（例: 外径 42.00mm）を測定。
-2. **SolidForge 3D の診断値との照合**: レポートの「外形寸法（X, Y, Z）」が実測値と $\pm 0.1\sim 0.2\text{mm}$ 以内であることを確認。
+2. **SolidForge 3D の診断値との照合**: レポートの「外形寸法（X, Y, Z）」が実測値と $\\pm 0.1\\sim 0.2\\text{mm}$ 以内であることを確認。
 3. **クリアランス（公差）設計**: 3D プリンタの積層膨らみを考慮し、スライサーの「XY 穴補正（X-Y Hole Compensation）」に `+0.15mm` を設定して印刷。
 
 ### 4.8 ArUcoマーカー多点配置と高精度特異値分解(SVD)幾何レジストレーション
-大型部品や高精度が要求される機械部品では、被写体の周囲に 3 個以上の異なる ID（ID: 0, ID: 1, ID: 2）の ArUco マーカーを配置することで、Kabsch アルゴリズム（SVD による最適剛体変換推定）を適用し、$\pm 0.05\text{mm}$ 以下の超高精度寸法校正が可能です。
+大型部品や高精度が要求される機械部品では、被写体の周囲に 3 個以上の異なる ID（ID: 0, ID: 1, ID: 2）の ArUco マーカーを配置することで、Kabsch アルゴリズム（SVD による最適剛体変換推定）を適用し、$\\pm 0.05\\text{mm}$ 以下の超高精度寸法校正が可能です。
 
 ### 4.9 スキャン前の被写体表面状態チェックリスト
 撮影を開始する前に以下の4点を確認してください：
@@ -354,16 +371,18 @@ sequenceDiagram
 - [ ] **固定状態チェック**: 撮影中に風や振動で動く糸・リボン・薄紙がないか。
 
 ### 4.10 被写体別の推奨周回半径とカメラ高さの幾何学的計算式
-被写体の高さ $H$、幅 $W$、およびカメラの水平画角 $\text{FOV}_h$ に対し、最適な撮影距離 $D_{\text{opt}}$ は次式で算出されます：
+被写体の高さ $H$、幅 $W$、およびカメラの水平画角 $\\text{FOV}_h$ に対し、最適な撮影距離 $D_{\\text{opt}}$ は次式で算出されます：
 
-$$D_{\text{opt}} = \frac{\max(H, W)}{2 \cdot \tan(\text{FOV}_h / 2)} \times 1.25$$
+$$D_{\\text{opt}} = \\frac{\\max(H, W)}{2 \\cdot \\tan(\\text{FOV}_h / 2)} \\times 1.25$$
 
-ここで係数 $1.25$ は被写体が画面の 80% を占めるマージンを表します。被写体から $D_{\text{opt}}$ 離れた円周上を周回することで、焦点深度と解像度が常に最適化されます。
+ここで係数 $1.25$ は被写体が画面の 80% を占めるマージンを表します。被写体から $D_{\\text{opt}}$ 離れた円周上を周回することで、焦点深度と解像度が常に最適化されます。
 
 ### 4.11 初心者向けワンクリック完全自動モード（Forge Auto-Pilot）の活用法
 「カメラを繋いで周囲を回ってシャッターを押し、生成ボタンを押すだけ」で、ブレ写真の自動選別、ノイズ除去、3D再構築、接地面カット、実寸校正、OrcaSlicer 起動までの一連の処理がノンストップで自動完結する Auto-Pilot モードを搭載しています。
+""")
 
-
+    # Chapter 5: Complete GUI Reference & Shortcuts & Theme
+    parts.append("""
 ---
 
 ## 5. 📖 GUI 画面・ウィジェット完全操作リファレンス (GUI & Controls Reference)
@@ -466,8 +485,10 @@ SolidForge 3D は、長時間の 3D 制作作業でも目の疲労を最小限�
 
 ### 5.11 リアルタイム GPU パフォーマンスプロファイラとボトルネック診断ビュー
 パイプライン実行中、各ステップ（画像読込・SiftGPU特徴抽出・マッチング・点群高密度化・メッシュ化・RANSACカット）の GPU 使用率と所要時間をミリ秒単位でリアルタイム視覚化します。
+""")
 
-
+    # Chapter 6: Practical Shooting Mastery (Extended to 13 sub-sections)
+    parts.append("""
 ---
 
 ## 6. 💡 被写体別 撮影マスターステップバイステップガイド (Practical Shooting Mastery)
@@ -558,8 +579,10 @@ SolidForge 3D は、長時間の 3D 制作作業でも目の疲労を最小限�
 
 ### 6.13 木工・家具接合部（ほぞ継ぎ・ダボ穴）の精密現物合わせ3Dスキャン
 手加工された木材の接合面やアンティーク家具の脚部など、設計図のない現物合わせ部品をスキャンし、ぴったり嵌合する 3D プリント補修ジョイントを製作できます。
+""")
 
-
+    # Chapter 7 & 8: Performance Architecture & Mathematics
+    parts.append("""
 ---
 
 ## 7. ⚡ 極限高性能化 & Multi-GPU 並列クラスタアーキテクチャ (Performance & Architecture)
@@ -568,11 +591,11 @@ SolidForge 3D は、最新の **NVIDIA GeForce RTX 5080 (Blackwell アーキテ�
 
 ### 7.1 GPU 直接ラプラシアン鮮鋭度演算 (Zero-Copy CUDA Conv2D)
 従来の Python / OpenCV 実装では、毎フレーム CPU メモリへの画像コピーと CPU 上でのラプラシアン畳み込み計算が発生し、4K 映像では 15〜20 FPS に低下して Live View がカクつく原因となっていました。
-SolidForge 3D では、PyTorch CUDA のテンソル構造を用い、GPU VRAM 上に常駐させた $3 \times 3$ ラプラシアンカーネルを用いてダイレクトに空間畳み込みを実行します：
+SolidForge 3D では、PyTorch CUDA のテンソル構造を用い、GPU VRAM 上に常駐させた $3 \\times 3$ ラプラシアンカーネルを用いてダイレクトに空間畳み込みを実行します：
 
-$$\nabla^2 I = \frac{\partial^2 I}{\partial x^2} + \frac{\partial^2 I}{\partial y^2} \approx I * \begin{bmatrix} 0 & 1 & 0 \\ 1 & -4 & 1 \\ 0 & 1 & 0 \end{bmatrix}$$
+$$\\nabla^2 I = \\frac{\\partial^2 I}{\\partial x^2} + \\frac{\\partial^2 I}{\\partial y^2} \\approx I * \\begin{bmatrix} 0 & 1 & 0 \\\\ 1 & -4 & 1 \\\\ 0 & 1 & 0 \\end{bmatrix}$$
 
-$$\text{Sharpness Score} = \text{Var}(\nabla^2 I) = \frac{1}{N} \sum_{x,y} \left( (\nabla^2 I)(x,y) - \mu_{\nabla^2 I} \right)^2$$
+$$\\text{Sharpness Score} = \\text{Var}(\\nabla^2 I) = \\frac{1}{N} \\sum_{x,y} \\left( (\\nabla^2 I)(x,y) - \\mu_{\\nabla^2 I} \\right)^2$$
 
 - **効果**: CPU-GPU 間転送オーバーヘッドがゼロになり、**60+ FPS の極めて滑らかなリアルタイム手ブレ検知** を実現。
 
@@ -603,41 +626,43 @@ Blackwell 世代で新設された FP8 Tensor Core を活用し、モデルウ�
 SfM は、異なる視点から撮影された写真群からカメラの外部パラメータ（位置 $R, t$）と内部パラメータ（焦点距離 $f$、主点 $c_x, c_y$、歪み）、および 3D 空間中の特徴点座標 $X_j$ を同時に推定する技術です。
 バンドル調整（Bundle Adjustment）における再投影誤差（Reprojection Error）の最小化問題として定式化されます：
 
-$$\min_{R_i, t_i, X_j} \sum_{i=1}^M \sum_{j=1}^N \rho \left( \left\| x_{ij} - \pi(R_i X_j + t_i) \right\|^2 \right)$$
+$$\\min_{R_i, t_i, X_j} \\sum_{i=1}^M \\sum_{j=1}^N \\rho \\left( \\left\\| x_{ij} - \\pi(R_i X_j + t_i) \\right\\|^2 \\right)$$
 
-ここで $\pi(\cdot)$ は透視投影関数、$\rho(\cdot)$ は外れ値の影響を抑える Huber ロバスト損失関数です。
+ここで $\\pi(\\cdot)$ は透視投影関数、$\\rho(\\cdot)$ は外れ値の影響を抑える Huber ロバスト損失関数です。
 
 ### 8.2 Multi-View Stereo & Surface Reconstruction (MVS: OpenMVS)
 SfM で得られた疎な点群とカメラ姿勢を元に、パッチベースのステレオマッチング（PatchMatch MVS）を用いて画素単位の深度マップ（Depth Map）を推定し、高密度点群（Dense Point Cloud）を構築。その後、Delaunay 三角分割およびグラフカット（Graph-Cut）最適化により、水密性の高いメッシュ曲面を復元します。
 
 ### 8.3 ArUco マーカー 1:1 実寸ミリメートル幾何校正
-ArUco マーカーの 4 隅の画像上座標 $p_k = (u_k, v_k)$ と、既知の物理サイズ $L_{\text{real}}$（mm）から、3D 空間中のマーカー辺長 $L_{\text{recon}}$ を計測。実寸スケーリング係数 $S$ を次式で決定し、メッシュ全体に乗算します：
+ArUco マーカーの 4 隅の画像上座標 $p_k = (u_k, v_k)$ と、既知の物理サイズ $L_{\\text{real}}$（mm）から、3D 空間中のマーカー辺長 $L_{\\text{recon}}$ を計測。実寸スケーリング係数 $S$ を次式で決定し、メッシュ全体に乗算します：
 
-$$S = \frac{L_{\text{real}}}{\frac{1}{4} \sum_{k=1}^4 \| X_k - X_{(k \bmod 4) + 1} \|}$$
+$$S = \\frac{L_{\\text{real}}}{\\frac{1}{4} \\sum_{k=1}^4 \\| X_k - X_{(k \\bmod 4) + 1} \\|}$$
 
 ### 8.4 RANSAC 接地面検出 & 底面フラットカット (Z=0 アライメント)
-メッシュ下部の頂点集合 $\mathcal{V}_{\text{bottom}}$ に対し、3 点サンプリングによる平面方程式 $n \cdot x + d = 0$（$\hat{n}_z \ge 0.85$）のインライア数を最大化。検出された平面でメッシュをスライスし、切断面を三角形分割（Earcut法）でキャップして最下面を $Z=0$ に平行移動します。
+メッシュ下部の頂点集合 $\\mathcal{V}_{\\text{bottom}}$ に対し、3 点サンプリングによる平面方程式 $n \\cdot x + d = 0$（$\\hat{n}_z \\ge 0.85$）のインライア数を最大化。検出された平面でメッシュをスライスし、切断面を三角形分割（Earcut法）でキャップして最下面を $Z=0$ に平行移動します。
 
 ### 8.5 SLA 向け中空化 (Hollowing) & レジン排出穴 (Drain Holes)
-メッシュの各頂点を法線逆方向に肉厚 $t$（mm）だけオフセットしたインナーメッシュ $\mathcal{M}_{\text{inner}}$ を生成し、法線を反転（Invert Normals）してアウターメッシュと結合：
+メッシュの各頂点を法線逆方向に肉厚 $t$（mm）だけオフセットしたインナーメッシュ $\\mathcal{M}_{\\text{inner}}$ を生成し、法線を反転（Invert Normals）してアウターメッシュと結合：
 
-$$\mathcal{V}_{\text{inner}} = \mathcal{V}_{\text{outer}} - t \cdot \hat{n}_v$$
+$$\\mathcal{V}_{\\text{inner}} = \\mathcal{V}_{\\text{outer}} - t \\cdot \\hat{n}_v$$
 
-底面付近には直径 $D = 2r$（mm）の円柱カッター $\mathcal{C}_k$ を配置し、ブーリアン差分（$\mathcal{M}_{\text{hollow}} \setminus \bigcup \mathcal{C}_k$）によって未硬化レジンの排出口を開口します。
+底面付近には直径 $D = 2r$（mm）の円柱カッター $\\mathcal{C}_k$ を配置し、ブーリアン差分（$\\mathcal{M}_{\\text{hollow}} \\setminus \\bigcup \\mathcal{C}_k$）によって未硬化レジンの排出口を開口します。
 
 ### 8.6 完全水密化 (Watertight Guarantee)
-オイラー・ポアンカレの標数（Euler Characteristic） $\chi = V - E + F = 2(1 - g)$ を満たし、境界エッジ（Boundary Edges = 穴）が 0 であり、すべてのエッジが厳密に 2 つの面に共有されている多様体（2-Manifold）であることを Trimesh 幾何解析で保証します。
+オイラー・ポアンカレの標数（Euler Characteristic） $\\chi = V - E + F = 2(1 - g)$ を満たし、境界エッジ（Boundary Edges = 穴）が 0 であり、すべてのエッジが厳密に 2 つの面に共有されている多様体（2-Manifold）であることを Trimesh 幾何解析で保証します。
 
 ### 8.7 Brown-Conrady レンズ歪みモデル & エピポーラ幾何
 スマートフォンの広角レンズやアクションカメラの歪みを数学的に補正するため、以下の Brown-Conrady 歪みモデルが内部で適用されます：
 
-$$x_{\text{distorted}} = x (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) + [2 p_1 x y + p_2 (r^2 + 2x^2)]$$
+$$x_{\\text{distorted}} = x (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) + [2 p_1 x y + p_2 (r^2 + 2x^2)]$$
 
-$$y_{\text{distorted}} = y (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) + [p_1 (r^2 + 2y^2) + 2 p_2 x y]$$
+$$y_{\\text{distorted}} = y (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) + [p_1 (r^2 + 2y^2) + 2 p_2 x y]$$
 
 ここで $r^2 = x^2 + y^2$ であり、$k_1, k_2, k_3$ は放射状歪み係数、$p_1, p_2$ は接線歪み係数です。COLMAP はこれらの係数を SfM 最適化ループ内で自動学習し、幾何学的に真直ぐな透視投影空間へとマッピングします。
+""")
 
-
+    # Chapter 9: Slicer Integration & Material Profiles & Post-processing
+    parts.append("""
 ---
 
 ## 9. 🖨️ 主要 3D スライサー別 最適化 & 印刷パラメータ完全ガイド (Slicer Integration Guides)
@@ -689,8 +714,10 @@ SolidForge 3D で生成した STL を各種材料で最高品質に印刷する�
 
 ### 9.8 マルチカラー 3D プリント (Bambu AMS / Prusa MMU3) 向けカラー STL 出力
 SolidForge 3D で生成したカラーメッシュは、パーツごとの色情報やテクスチャマップに基づいて、マルチヘッド/マルチフィラメントシステム（Bambu Lab AMS、Prusa MMU3 等）で色分け印刷するためのマルチパーツ STL / OBJ としてエクスポート可能です。
+""")
 
-
+    # Chapter 10, 11, 12, 13: Architecture, Install, Security, Tests
+    parts.append("""
 ---
 
 ## 10. 📁 ディレクトリ構成 & モジュール解説 (Project Structure)
@@ -785,7 +812,7 @@ CWE（Common Weakness Enumeration / 共通脆弱性タイプ一覧）基準に�
 | **CWE-78 / CWE-88**<br>(コマンド / 引数インジェクション) | `ModelExporter.launch_in_orcaslicer`<br>`ReconstructionPipeline._exec_cmd` | ・すべてのサブプロセス起動において `shell=False` および引数リスト形式を厳格適用。<br>・空白、セミコロン、バッククォート、制御文字を含む悪意あるファイル名・パスでも安全にエスケープ処理。<br>・非同期キャンセル時にゾンビプロセスを残さない強制終了 (`kill`) ガード。 |
 | **CWE-20**<br>(不適切な入力値検証) | `QualityGate.evaluate_image`<br>`CameraManager.connect_smartphone_ip`<br>`ReconstructionPipeline._run_pipeline` | ・0 バイトファイル、壊れた JPEG ヘッダー、None、空配列の例外を完全捕捉して安全スキップ。<br>・不正なネットワーク URL プロトコル（`invalid_proto://` 等）を事前遮断。<br>・有効画像が 0 枚の際にクラッシュせず安全なエラーシグナルを送出。 |
 | **CWE-22**<br>(パストラバーサル) | `ModelExporter.export_mesh`<br>`ReconstructionPipeline` ステージング | ・`Path.resolve()` による絶対パスの正規化。<br>・複数フォルダからの同名画像インポート時に連番プレフィックスを付与してファイル上書き衝突を防止。 |
-| **CWE-400**<br>(リソース枯渇 / 異常値耐性) | `MeshPostProcessor.process_model`<br>`GeometryPrep.hollow_mesh` | ・負数、ゼロ、非数（NaN/Inf）、過大値（$>10,000\times$）のスケール倍率を自動クランプ。<br>・モデル寸法を超える中空化肉厚が指定された場合の自動適応縮小。 |
+| **CWE-400**<br>(リソース枯渇 / 異常値耐性) | `MeshPostProcessor.process_model`<br>`GeometryPrep.hollow_mesh` | ・負数、ゼロ、非数（NaN/Inf）、過大値（$>10,000\\times$）のスケール倍率を自動クランプ。<br>・モデル寸法を超える中空化肉厚が指定された場合の自動適応縮小。 |
 | **ゼロ除算 & 退化幾何形状耐性** | `GeometryPrep.detect_ground_plane_ransac`<br>`GeometryPrep.slice_ground_plane` | ・0 頂点・0 面の空メッシュや厚み 0 の単一平面メッシュに対するゼロ除算ガード。<br>・退化メッシュ入力時の安全なフォールバック立体生成。 |
 
 ---
@@ -812,8 +839,10 @@ OK
 8. **`tests/test_camera_manager.py` (3件)**: シミュレータ、USBカメラ走査、スマホWiFi接続
 9. **`tests/test_insta360.py` (4件)**: 360°パノラマ検出、透視投影展開、バーチャルマルチビュー
 10. **`tests/test_post_processor.py` (2件)**: 水密化 (Watertight) 修復、1:1実寸診断レポート
+""")
 
-
+    # Chapter 14 & 15: FAQ 60 Items & License
+    parts.append("""
 ---
 
 ## 14. ❓ よくある質問・トラブルシューティング全60選 (FAQ & Troubleshooting)
@@ -865,12 +894,12 @@ SfM の三角測量アルゴリズムにおいて、同一の特徴点が最低 
 
 <details>
 <summary><b>Q10. オニオンスキン（ゴースト重畳）の透明度は調整できますか？</b></summary>
-デフォルトで $\alpha = 0.4$（40% 半透明）に最適化されています。直前の写真と現在の映像の特徴的な輪郭が半分以上重なるように移動してシャッターを切ってください。
+デフォルトで $\\alpha = 0.4$（40% 半透明）に最適化されています。直前の写真と現在の映像の特徴的な輪郭が半分以上重なるように移動してシャッターを切ってください。
 </details>
 
 <details>
 <summary><b>Q11. OrcaSlicer が自動起動しない場合の対処法は？</b></summary>
-OrcaSlicer が標準のインストールパス（`C:\Program Files\OrcaSlicer\orca-slicer.exe` または `%LOCALAPPDATA%\Programs\OrcaSlicer`）にあるかご確認ください。見つからない場合は Windows の既定の 3D アプリケーションでフォールバック起動されます。
+OrcaSlicer が標準のインストールパス（`C:\\Program Files\\OrcaSlicer\\orca-slicer.exe` または `%LOCALAPPDATA%\\Programs\\OrcaSlicer`）にあるかご確認ください。見つからない場合は Windows の既定の 3D アプリケーションでフォールバック起動されます。
 </details>
 
 <details>
@@ -1141,3 +1170,17 @@ SolidForge 3D は、以下の卓越したオープンソースプロジェクト
   <b>SolidForge 3D - Forging Reality into Solid Matter.</b><br>
   Developed with ❤️ for 3D Vision & 3D Printing Enthusiasts.
 </p>
+""")
+
+    full_readme = "\n".join(parts)
+    dest_path = Path("README.md")
+    dest_path.write_text(full_readme, encoding="utf-8")
+    
+    char_count = len(full_readme)
+    char_no_spaces = len(full_readme.replace(' ', '').replace('\t', '').replace('\n', '').replace('\r', ''))
+    print(f"Master Readme Successfully Generated!")
+    print(f"Total Characters (with spaces): {char_count}")
+    print(f"Total Characters (without spaces): {char_no_spaces}")
+
+if __name__ == "__main__":
+    main()
