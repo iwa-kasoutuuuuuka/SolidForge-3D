@@ -45,6 +45,9 @@ class GeometryPrep:
             Tuple[np.ndarray, np.ndarray]: (平面の通過点 [x, y, z], 平面の法線ベクトル [nx, ny, nz])
         """
         verts = mesh.vertices
+        if verts is None or len(verts) == 0:
+            return np.array([0.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0])
+
         z_min, z_max = np.min(verts[:, 2]), np.max(verts[:, 2])
         z_thresh = z_min + (z_max - z_min) * sample_ratio
 
@@ -135,6 +138,9 @@ class GeometryPrep:
         Returns:
             trimesh.Trimesh: 底面が完全にフラットカットされた水密メッシュ
         """
+        if mesh is None or len(mesh.vertices) == 0 or len(mesh.faces) == 0:
+            return mesh if (mesh is not None and len(mesh.vertices) > 0) else trimesh.creation.box(extents=[10, 10, 10])
+
         offset = offset_mm if offset_mm is not None else self.config.ground_cut_offset_mm
         plane_origin, plane_normal = self.detect_ground_plane_ransac(
             mesh, distance_threshold=self.config.ground_plane_ransac_distance_thresh

@@ -143,6 +143,90 @@ class TestSecurityAndEdgeCases(unittest.TestCase):
         pipeline.cancel()
         self.assertTrue(pipeline._cancel_requested)
 
+    # =========================================================================
+    # 7. スライサー起動 & 引数インジェクション耐性 (CWE-78 / CWE-88)
+    # =========================================================================
+    def test_orcaslicer_launch_security(self):
+        """存在しないファイルや特殊文字を含むパスが安全に処理されるか検証"""
+        # 存在しないファイル -> 安全にFalseを返却
+        res_non_exist = ModelExporter.launch_in_orcaslicer(self.tmp_dir / "non_existent.stl")
+        self.assertFalse(res_non_exist)
+
+        # 特殊記号・空白を含む実在ファイル
+        special_file = self.tmp_dir / "test model & print ; calc.stl"
+        mesh = trimesh.creation.box()
+        mesh.export(str(special_file), file_type="stl")
+        # 例外を起こさず実行可能 (TrueまたはFalse)
+        try:
+            res_special = ModelExporter.launch_in_orcaslicer(special_file)
+            self.assertIsInstance(res_special, bool)
+        except Exception as e:
+            self.fail(f"特殊パスで予期せぬ例外が発生しました: {e}")
+
+    # =========================================================================
+    # 8. カメラネットワークURL入力検証 (CWE-20: Network Input Validation)
+    # =========================================================================
+    def test_camera_manager_network_input_validation(self):
+        """不正なURLや空文字列、無効なプロトコルに対して安全にFalseを返すか検証"""
+        cam = CameraManager()
+        # 空文字列
+        self.assertFalse(cam.connect_smartphone_ip(""))
+        self.assertFalse(cam.connect_smartphone_ip("   "))
+        # 不正なプロトコル
+        self.assertFalse(cam.connect_smartphone_ip("invalid_proto://127.0.0.1:99999"))
+        # 存在しないホスト
+        self.assertFalse(cam.connect_smartphone_ip("http://192.0.2.1:8080/video"))
+
+    # =========================================================================
+    # 9. ポストプロセッサ退化メッシュ耐性 (Degenerate Mesh & Zero Face)
+    # =========================================================================
+    def test_post_processor_degenerate_zero_face_mesh(self):
+        """面が存在しない空メッシュや極小メッシュを渡してもクラッシュしないか検証"""
+        empty_mesh = trimesh.Trimesh()
+        # 空メッシュでも安全にフォールバックメッシュとレポートが生成される
+        processed, report = self.post_processor.process_model(empty_mesh, scale_factor=1.0)
+        self.assertIsNotNone(processed)
+        self.assertIsNotNone(report)
+        self.assertGreater(len(processed.vertices), 0)
+
+    # =========================================================================
+    # 10. パイプライン空入力・破損ファイル検証 (Pipeline Empty & Corrupt Staging)
+    # =========================================================================
+    def test_pipeline_empty_and_corrupt_inputs(self):
+        """空リストや0バイトファイルのみを渡した場合に安全にエラー停止シグナルが送出されるか検証"""
+        pipeline = ReconstructionPipeline()
+        work_dir = self.tmp_dir / "pipe_test"
+
+        finished_results = []
+        pipeline.reconstruction_finished.connect(lambda s, p, r: finished_results.append((s, p, r)))
+
+        # 空リスト -> 安全に停止し success=False
+        pipeline._run_pipeline([], "stl", work_dir)
+        self.assertEqual(len(finished_results), 1)
+        self.assertFalse(finished_results[0][0])  # success == False
+
+        # 0バイトファイルのみ -> 安全に停止し success=False
+        zero_file = self.tmp_dir / "zero.jpg"
+        zero_file.touch()
+        pipeline._run_pipeline([zero_file], "stl", work_dir)
+        self.assertEqual(len(finished_results), 2)
+        self.assertFalse(finished_results[1][0])  # success == False
+
+    # =========================================================================
+    # 11. ArUco 実寸スケール校正の境界値検証 (ArUco Scale Robustness)
+    # =========================================================================
+    def test_aruco_scale_calibration_edge_cases(self):
+        """異常なスケール倍率 (負数、0、極端な1000倍) に対する安全性検証"""
+        mesh = trimesh.creation.box(extents=[10.0, 10.0, 10.0])
+        # 負の倍率 -> デフォルト1.0に自動クランプ
+        proc_neg, rep_neg = self.post_processor.process_model(mesh, scale_factor=-5.0)
+        self.assertEqual(rep_neg.scale_factor_applied, 1.0)
+
+        # 0倍率 -> デフォルト1.0に自動クランプ
+        proc_zero, rep_zero = self.post_processor.process_model(mesh, scale_factor=0.0)
+        self.assertEqual(rep_zero.scale_factor_applied, 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
+

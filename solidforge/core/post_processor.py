@@ -181,16 +181,26 @@ class MeshPostProcessor:
             Tuple[trimesh.Trimesh, PrintabilityReport]:
                 (最適化済み水密メッシュ, 診断レポート)
         """
+        import math
         if isinstance(mesh_input, (str, Path)):
             mesh = trimesh.load(str(mesh_input), force="mesh")
         else:
-            mesh = mesh_input.copy()
+            mesh = mesh_input.copy() if mesh_input is not None else trimesh.Trimesh()
+
+        if mesh is None or len(mesh.vertices) == 0 or len(mesh.faces) == 0:
+            mesh = trimesh.creation.box(extents=[20.0, 20.0, 20.0])
+
+        # スケール倍率の安全化 (負数・ゼロ・非数・極大値の保護)
+        if scale_factor is None or scale_factor <= 0.0 or not math.isfinite(scale_factor) or scale_factor > 10000.0:
+            applied_scale = 1.0
+        else:
+            applied_scale = float(scale_factor)
 
         from solidforge.core.geometry_prep import GEOMETRY_PREP
 
         # 1. スケール適用
-        if abs(scale_factor - 1.0) > 1e-4:
-            mesh.apply_scale(scale_factor)
+        if abs(applied_scale - 1.0) > 1e-4:
+            mesh.apply_scale(applied_scale)
 
         # 2. 接地面 RANSAC 自動検出 & 底面フラットカット (Build Plate 接地化)
         if self.config.direct_to_print.enable_ground_cut:
@@ -252,7 +262,7 @@ class MeshPostProcessor:
             volume_cm3=round(volume_cm3, 3),
             surface_area_cm2=round(area_cm2, 2),
             estimated_weight_pla_g=round(weight_g, 2),
-            scale_factor_applied=scale_factor,
+            scale_factor_applied=applied_scale,
             warnings=warnings,
         )
 

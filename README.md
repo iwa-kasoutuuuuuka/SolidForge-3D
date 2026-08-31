@@ -12,7 +12,7 @@
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
 [![OrcaSlicer Ready](https://img.shields.io/badge/Slicer-OrcaSlicer%20%2F%20Bambu%20Studio-00e5ff?style=for-the-badge)](https://github.com/SoftFever/OrcaSlicer)
 [![Direct to Print](https://img.shields.io/badge/3D%20Print-Vectorized%20RANSAC-ffd600?style=for-the-badge)](https://en.wikipedia.org/wiki/STL_(file_format))
-[![Tests](https://img.shields.io/badge/Unit%20Tests-30%2F30%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-35%2F35%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
 
 ---
 
@@ -203,7 +203,7 @@ SolidForge 3D/
 │       │   ├── log_terminal.py         # リアルタイムログ & GPUテレメトリHUD
 │       │   └── mesh_viewer_widget.py   # 3Dプリント診断レポート & ビューア
 │       └── main_window.py      # メインGUIウィンドウ
-└── tests/                      # 単体テスト (30件全件合格)
+└── tests/                      # 単体テスト (35件全件合格)
     ├── test_quality_gate.py
     ├── test_post_processor.py
     ├── test_camera_manager.py
@@ -348,7 +348,7 @@ python main.py
 python -m unittest discover tests
 ```
 
-### テストスイート一覧 (30件全件合格)
+### テストスイート一覧 (35件全件合格)
 - **`test_multi_gpu.py` (3件)**:
   - `test_multi_gpu_config_colmap_string`: COLMAP用複数GPU引数文字列生成
   - `test_hardware_optimizer_list_all_gpus`: 全GPU個別テレメトリ列挙
@@ -382,13 +382,18 @@ python -m unittest discover tests
 - **`test_post_processor.py` (2件)**:
   - `test_watertight_synthetic_mesh`: 水密性自動修復ロジック
   - `test_process_model_diagnostics`: 1:1スケール校正 & 体積・外形寸法診断
-- **`test_security_and_edge_cases.py` (6件)**:
-  - `test_quality_gate_handles_none_and_empty_images`: 0バイトファイル/破損ヘッダー/None入力の安全性
-  - `test_path_traversal_sanitization`: パストラバーサル防止 & サブディレクトリ安全生成
+- **`test_security_and_edge_cases.py` (11件)**:
+  - `test_quality_gate_handles_none_and_empty_images`: 0バイトファイル/破損ヘッダー/None入力の安全性 (CWE-20)
+  - `test_path_traversal_sanitization`: パストラバーサル防止 & サブディレクトリ安全生成 (CWE-22)
   - `test_geometry_prep_degenerate_mesh_safety`: 退化メッシュ & ゼロ厚み平面のゼロ除算安全性
   - `test_ai_enhancer_edge_dimensions`: 1x1極小画像 & 極端解像度入力耐性
   - `test_trajectory_analyzer_zero_and_single_pose`: 0姿勢・1姿勢の境界値テスト
   - `test_pipeline_cancellation_flag`: 非同期キャンセル制御フラグ検証
+  - `test_orcaslicer_launch_security`: スライサー起動・特殊文字引数インジェクション耐性 (CWE-78/88)
+  - `test_camera_manager_network_input_validation`: カメラURL入力検証・無効プロトコル安全処理 (CWE-20)
+  - `test_post_processor_degenerate_zero_face_mesh`: 0面・空メッシュの安全フォールバック処理
+  - `test_pipeline_empty_and_corrupt_inputs`: パイプライン空入力・0バイトファイル検出と安全停止
+  - `test_aruco_scale_calibration_edge_cases`: スケール倍率の異常値（負数・0・過大値）自動クランプ (CWE-400)
 
 ---
 

@@ -78,16 +78,26 @@ class ReconstructionPipeline(QObject):
         openmvs_dir.mkdir(exist_ok=True)
 
         try:
+            if not image_paths:
+                raise ValueError("再構築対象の画像ファイルが1枚も指定されていません。")
+
             self.log_emitted.emit(f"=== SolidForge 3D 処理開始 ===")
             self.log_emitted.emit(f"ターゲットGPU: {self.config.hardware.gpu_name} (CUDA 12.x+ / Blackwell)")
             self.log_emitted.emit(f"投入有効画像数: {len(image_paths)} 枚")
             self.progress_updated.emit(5, "画像ステージング中...")
 
-            # 1. 有効画像のワークスペースへのコピー
-            for p in image_paths:
-                dest = images_dir / p.name
-                if not dest.exists():
-                    shutil.copy2(p, dest)
+            # 1. 有効画像のワークスペースへのコピー (重複ファイル名対策 & 実在確認)
+            valid_staged: List[Path] = []
+            for i, p in enumerate(image_paths):
+                if p.exists() and p.is_file() and p.stat().st_size > 0:
+                    dest = images_dir / f"{i:04d}_{p.name}"
+                    if not dest.exists():
+                        shutil.copy2(p, dest)
+                    valid_staged.append(dest)
+
+            if not valid_staged:
+                raise ValueError("有効な画像ファイルが見つかりませんでした (0バイトまたは破損ファイル)。")
+            image_paths = valid_staged
 
             # 2. AI TensorRT ブレ除去 & 高ISOノイズ低減 (RTX 5080 Tensor Cores)
             if self.config.ai_enhancement.enable_ai_enhancer:
