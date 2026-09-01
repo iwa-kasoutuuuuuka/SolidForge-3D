@@ -121,11 +121,20 @@ class MainWindow(QMainWindow):
         title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #00e676; letter-spacing: 1px;")
         top_layout.addWidget(title_label)
 
-        sub_label = QLabel("| SONY ZV-E10 × RTX 5080 TensorRT フォトグラメトリ")
+        sub_label = QLabel("| Multi-Camera × RTX 5080 Multi-GPU フォトグラメトリ")
         sub_label.setStyleSheet("font-size: 13px; color: #94a3b8; font-weight: bold;")
         top_layout.addWidget(sub_label)
 
         top_layout.addStretch()
+
+        # カメラ切替ダイアログ起動ボタン
+        self.btn_top_camera_select = QPushButton("📷 カメラ切替 / スマホ接続")
+        self.btn_top_camera_select.setStyleSheet(
+            "QPushButton { background-color: #1e293b; color: #38bdf8; border: 1px solid #38bdf8; padding: 4px 10px; border-radius: 4px; font-weight: bold; }"
+            "QPushButton:hover { background-color: #0284c7; color: #ffffff; }"
+        )
+        self.btn_top_camera_select.clicked.connect(self._open_camera_select_dialog)
+        top_layout.addWidget(self.btn_top_camera_select)
 
         # モード選択
         mode_box = QHBoxLayout()
@@ -134,7 +143,7 @@ class MainWindow(QMainWindow):
         mode_label.setStyleSheet("color: #00e5ff; font-weight: bold;")
         mode_box.addWidget(mode_label)
 
-        self.btn_mode_wired = QRadioButton("有線撮影モード (ZV-E10 Live View)")
+        self.btn_mode_wired = QRadioButton("Live View 撮影モード (カメラ/スマホ/Insta360)")
         self.btn_mode_offline = QRadioButton("オフライン読込モード (SDカード/フォルダ)")
         self.btn_mode_wired.setChecked(True)
 
@@ -336,6 +345,11 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         CAMERA_MANAGER.photo_captured.connect(self._on_photo_captured_from_camera)
         PIPELINE.reconstruction_finished.connect(self._on_reconstruction_finished)
+
+    def _open_camera_select_dialog(self):
+        from solidforge.ui.widgets.camera_select_dialog import CameraSelectDialog
+        dialog = CameraSelectDialog(self)
+        dialog.exec()
 
     def _on_mode_changed(self):
         if self.btn_mode_wired.isChecked():
