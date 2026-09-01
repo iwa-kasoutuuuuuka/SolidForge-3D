@@ -14,6 +14,7 @@ from PySide6.QtCore import QObject, Signal
 
 from solidforge.config import CONFIG, AppConfig
 from solidforge.core.post_processor import POST_PROCESSOR, PrintabilityReport
+from solidforge.core.ai_segmenter import AI_SEGMENTER
 
 
 class ReconstructionPipeline(QObject):
@@ -112,6 +113,21 @@ class ReconstructionPipeline(QObject):
                 images_dir = ai_out_dir
                 self.log_emitted.emit("[AI Enhancer] 復元完了 (マイクロブレ除去 & SIFT特徴点エッジ強調)。")
 
+            # 2.5. AI 背景自動除去 & 被写体分離マスク生成 (Object Segmentation)
+            masks_dir: Optional[Path] = None
+            if self.config.ai.enable_ai_background_removal:
+                self.progress_updated.emit(10, "AI 背景自動除去中 (被写体セグメンテーション)...")
+                self.log_emitted.emit("[AI Segmenter] U2Net AI 背景自動除去を実行中 (被写体切り抜き & 背景ノイズ遮断)...")
+                masks_dir = work_dir / "masks"
+                current_images = [p for p in images_dir.iterdir() if p.suffix.lower() in [".jpg", ".jpeg", ".png"]]
+                AI_SEGMENTER.process_batch(
+                    current_images,
+                    masks_dir,
+                    margin_pixels=self.config.ai.ai_mask_margin,
+                    progress_cb=lambda pct, msg: self.progress_updated.emit(10 + int(pct * 0.05), msg),
+                )
+                self.log_emitted.emit(f"[AI Segmenter] {len(current_images)} 枚の被写体マスク生成完了。")
+
             # 3. 3Dカメラ軌跡・カバレッジ更新
             from solidforge.core.trajectory_analyzer import TRAJECTORY_ANALYZER
             TRAJECTORY_ANALYZER.generate_simulated_trajectory(count=len(image_paths), create_gap=False)
@@ -129,7 +145,7 @@ class ReconstructionPipeline(QObject):
                 )
                 final_mesh_path, report = self._run_simulated_pipeline(images_dir, work_dir, output_format)
             else:
-                final_mesh_path, report = self._run_native_pipeline(images_dir, colmap_dir, openmvs_dir, work_dir, output_format)
+                final_mesh_path, report = self._run_native_pipeline(images_dir, colmap_dir, openmvs_dir, work_dir, output_format, masks_dir=masks_dir)
 
             elapsed = time.time() - start_time
             self.log_emitted.emit(f"=== 3D生成完了 (所要時間: {elapsed:.1f} 秒) ===")
@@ -163,6 +179,7 @@ class ReconstructionPipeline(QObject):
         openmvs_dir: Path,
         work_dir: Path,
         output_format: str,
+        masks_dir: Optional[Path] = None,
     ):
         """ネイティブCOLMAP (SiftGPU) + OpenMVS (CUDA) の完全実行"""
         database_path = colmap_dir / "database.db"
@@ -188,6 +205,10 @@ class ReconstructionPipeline(QObject):
             "--SiftExtraction.max_image_size", "4096",
             "--SiftExtraction.peak_threshold", "0.006",
         ]
+        if masks_dir and masks_dir.exists():
+            cmd_extract.extend(["--ImageReader.mask_path", str(masks_dir)])
+            self.log_emitted.emit(f"[COLMAP] 被写体マスク適用: {masks_dir} (背景特徴点を完全除外)")
+
         self._exec_cmd(cmd_extract)
 
         # Stage 2: 特徴量マッチング (Exhaustive Matcher / Multi-GPU CUDA)

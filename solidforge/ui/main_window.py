@@ -226,9 +226,14 @@ class MainWindow(QMainWindow):
         ai_layout = QFormLayout(ai_group)
         ai_layout.setSpacing(8)
 
-        self.chk_enable_ai = QCheckBox("AIブレ除去 & 超解像を有効化 (Tensor Cores)")
+        self.chk_enable_ai = QCheckBox("AI 高速復元 & デブラーを有効化")
         self.chk_enable_ai.setChecked(self.config.ai_enhancement.enable_ai_enhancer)
         ai_layout.addRow("AI前処理:", self.chk_enable_ai)
+
+        self.chk_bg_removal = QCheckBox("AI 背景自動除去 (被写体自動切り抜き)")
+        self.chk_bg_removal.setChecked(self.config.ai_enhancement.enable_ai_background_removal)
+        self.chk_bg_removal.setToolTip("背後に部屋やモニター、デスクなどが写り込んでいても、AIが中央の被写体だけを自動分離して背景ノイズを完全にカットします。")
+        ai_layout.addRow("背景除去:", self.chk_bg_removal)
 
         self.combo_ai_model = QComboBox()
         self.combo_ai_model.addItems([
@@ -446,6 +451,7 @@ class MainWindow(QMainWindow):
 
         # パラメータ設定を同期
         self.config.ai_enhancement.enable_ai_enhancer = self.chk_enable_ai.isChecked()
+        self.config.ai_enhancement.enable_ai_background_removal = self.chk_bg_removal.isChecked()
         self.config.ai_enhancement.sharpen_strength = float(self.slider_ai_sharpen.value()) / 100.0
         
         self.config.post_process.aruco_marker_size_mm = self.spin_aruco_size.value()

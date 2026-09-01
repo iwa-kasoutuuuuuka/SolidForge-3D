@@ -61,13 +61,17 @@ class SmartAssistConfig:
 
 @dataclass
 class AIEnhancementConfig:
-    """NVIDIA RTX 5080 TensorRT / ONNX Runtime AI超解像 & デブラー設定"""
+    """NVIDIA RTX 5080 TensorRT / ONNX Runtime AI超解像 & デブラー & 背景除去設定"""
     enable_ai_enhancer: bool = True
     backend: Literal["TENSORRT", "CUDA_ONNX", "AUTO"] = "AUTO"
     model_type: Literal["NAFNet_Deblur", "RealESRGAN_x2", "Hybrid_Fast"] = "Hybrid_Fast"
     denoise_strength: float = 0.5  # 高ISOノイズ除去強度
     sharpen_strength: float = 0.7  # 輪郭シャープネス強度
     batch_size: int = 4  # RTX 5080向け並列バッチサイズ
+    # AI 背景自動除去 & 被写体分離 (Object Masking)
+    enable_ai_background_removal: bool = True  # 背景自動カット
+    ai_segmentation_model: str = "u2net"  # U2Net / ISNet
+    ai_mask_margin: int = 5  # 輪郭保護マージン (px)
 
 
 @dataclass
