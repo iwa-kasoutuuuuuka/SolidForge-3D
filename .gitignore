@@ -32,7 +32,9 @@ ENV/
 *.swp
 *.swo
 
-# SolidForge Workspace temp data
+# SolidForge Binaries & Workspace temp data
+bin/
+workspace/
 workspace/captures/
 workspace/test_run/
 workspace/*.stl

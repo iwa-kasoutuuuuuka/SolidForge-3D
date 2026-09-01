@@ -123,6 +123,42 @@ class PostProcessingConfig:
     direct_to_print: DirectToPrintConfig = field(default_factory=DirectToPrintConfig)
 
 
+def _find_colmap_binary() -> str:
+    """ローカル bin/colmap またはシステム PATH から COLMAP を自動検出"""
+    candidates = [
+        BASE_DIR / "bin" / "colmap" / "COLMAP.bat",
+        BASE_DIR / "bin" / "colmap" / "colmap.bat",
+        BASE_DIR / "bin" / "colmap" / "colmap.exe",
+        BASE_DIR / "bin" / "colmap" / "bin" / "colmap.exe",
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    env_path = os.getenv("COLMAP_PATH")
+    if env_path and os.path.exists(env_path):
+        return env_path
+    import shutil
+    w = shutil.which("colmap")
+    if w:
+        return w
+    return "colmap"
+
+
+def _find_openmvs_dir() -> str:
+    """ローカル bin/openmvs またはシステム PATH から OpenMVS を自動検出"""
+    candidates = [
+        BASE_DIR / "bin" / "openmvs",
+        BASE_DIR / "bin" / "openmvs" / "bin" / "x64" / "Release",
+    ]
+    for c in candidates:
+        if (c / "InterfaceCOLMAP.exe").exists() or (c / "InterfaceCOLMAP").exists():
+            return str(c)
+    env_path = os.getenv("OPENMVS_DIR")
+    if env_path and os.path.exists(env_path):
+        return env_path
+    return "openmvs"
+
+
 @dataclass
 class AppConfig:
     """SolidForge 3D 全体設定"""
@@ -130,8 +166,8 @@ class AppConfig:
     version: str = "1.1.0"
     workspace_dir: Path = DEFAULT_WORKSPACE_DIR
     
-    colmap_binary: str = os.getenv("COLMAP_PATH", "colmap")
-    openmvs_dir: str = os.getenv("OPENMVS_DIR", "openmvs")
+    colmap_binary: str = field(default_factory=_find_colmap_binary)
+    openmvs_dir: str = field(default_factory=_find_openmvs_dir)
     
     quality: QualityGateConfig = field(default_factory=QualityGateConfig)
     hardware: HardwareOptimizationConfig = field(default_factory=HardwareOptimizationConfig)
