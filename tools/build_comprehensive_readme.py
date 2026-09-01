@@ -111,7 +111,7 @@ def main():
    - [11.5 📁 ワークスペース構成と出力モデルの保存場所](#115--ワークスペース構成と出力モデルの保存場所)
 12. [🛡️ セキュリティ監査・堅牢化・脆弱性検証 (Security & Vulnerability Audit)](#12-セキュリティ監査堅牢化脆弱性検証-security--vulnerability-audit)
 13. [🧪 単体テストスイート完全リファレンス (Unit Tests Reference - 全35件)](#13-単体テストスイート完全リファレンス-unit-tests-reference---全35件)
-14. [❓ よくある質問・トラブルシューティング全65選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全65選-faq--troubleshooting)
+14. [❓ よくある質問・トラブルシューティング全66選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全66選-faq--troubleshooting)
 15. [📄 ライセンス & 謝辞 (License & Acknowledgements)](#15-ライセンス--謝辞-license--acknowledgements)
    - [15.1 MIT ライセンス条文 (MIT License Full Text)](#151-mit-ライセンス条文-mit-license-full-text)
    - [15.2 ライセンスの許諾範囲と利用条件 (Permissions & Conditions)](#152-ライセンスの許諾範囲と利用条件-permissions--conditions)
@@ -863,6 +863,7 @@ CWE（Common Weakness Enumeration / 共通脆弱性タイプ一覧）基準に�
 | 脆弱性分類 (CWE) | 対策箇所 | 実装された堅牢化保護ロジック |
 | :--- | :--- | :--- |
 | **CWE-78 / CWE-88**<br>(コマンド / 引数インジェクション) | `ModelExporter.launch_in_orcaslicer`<br>`ReconstructionPipeline._exec_cmd` | ・すべてのサブプロセス起動において `shell=False` および引数リスト形式を厳格適用。<br>・空白、セミコロン、バッククォート、制御文字を含む悪意あるファイル名・パスでも安全にエスケープ処理。<br>・非同期キャンセル時にゾンビプロセスを残さない強制終了 (`kill`) ガード。 |
+| **Windows パス空白・構文堅牢化**<br>(スペース含むディレクトリ対応) | `solidforge.config._find_colmap_binary`<br>`ReconstructionPipeline._exec_cmd` | ・`E:\SolidForge 3D\` のようにパス内に空白が含まれる環境でも構文破綻を起こさないよう、不具合のある `COLMAP.bat` をバイパスし、ネイティブ `colmap.exe` を直接安全起動。<br>・依存 DLL パス（`lib/`）を Python 側から環境変数へ自動動的注入。 |
 | **CWE-20**<br>(不適切な入力値検証) | `QualityGate.evaluate_image`<br>`CameraManager.connect_smartphone_ip`<br>`ReconstructionPipeline._run_pipeline` | ・0 バイトファイル、壊れた JPEG ヘッダー、None、空配列の例外を完全捕捉して安全スキップ。<br>・不正なネットワーク URL プロトコル（`invalid_proto://` 等）を事前遮断。<br>・有効画像が 0 枚の際にクラッシュせず安全なエラーシグナルを送出。 |
 | **CWE-22**<br>(パストラバーサル) | `ModelExporter.export_mesh`<br>`ReconstructionPipeline` ステージング | ・`Path.resolve()` による絶対パスの正規化。<br>・複数フォルダからの同名画像インポート時に連番プレフィックスを付与してファイル上書き衝突を防止。 |
 | **CWE-400**<br>(リソース枯渇 / 異常値耐性) | `MeshPostProcessor.process_model`<br>`GeometryPrep.hollow_mesh` | ・負数、ゼロ、非数（NaN/Inf）、過大値（$>10,000\\times$）のスケール倍率を自動クランプ。<br>・モデル寸法を超える中空化肉厚が指定された場合の自動適応縮小。 |
@@ -894,11 +895,11 @@ OK
 10. **`tests/test_post_processor.py` (2件)**: 水密化 (Watertight) 修復、1:1実寸診断レポート
 """)
 
-    # Chapter 14 & 15: FAQ 60 Items & License
+    # Chapter 14 & 15: FAQ 65 Items & License
     parts.append("""
 ---
 
-## 14. ❓ よくある質問・トラブルシューティング全65選 (FAQ & Troubleshooting)
+## 14. ❓ よくある質問・トラブルシューティング全66選 (FAQ & Troubleshooting)
 
 <details>
 <summary><b>Q1. SONY ZV-E10 が「未接続」となり Live View が表示されません</b></summary>
@@ -1225,6 +1226,11 @@ Windows のショートカット実行時に <code>WindowsApps\python.exe</code>
 <details>
 <summary><b>Q65. 生成された 3D モデル（STL/OBJ等）はどこに保存され、どのように開けますか？</b></summary>
 プロジェクトルートの <code>workspace/reconstruction_<タイムスタンプ>/model_print_ready.stl</code> に保存されます。3D メッシュ生成完了後、画面右側パネルに有効化される <b>「📂 出力フォルダを開く」</b> ボタンをクリックすると、保存先フォルダが Windows エクスプローラーで直接開きます。また「🖨️ 3Dビューア / スライサーで開く」を押すと OrcaSlicer / Bambu Studio / Windows 3D Viewer が自動起動します。
+</details>
+
+<details>
+<summary><b>Q66. フォルダパスに半角スペース（例: E:\SolidForge 3D）が含まれる場合、COLMAP 特徴抽出でステータスコード 255 エラーが出ますか？</b></summary>
+従来の <code>COLMAP.bat</code> ラッパーは Windows のバッチ引数パーサーの仕様によりパス内空白で構文エラーを起こす問題がありました。SolidForge 3D ではネイティブバイナリ <code>bin\colmap.exe</code> を直接実行し、必要な DLL 検索パス（<code>lib/</code>）を Python 側から動的注入する堅牢化アーキテクチャを採用しているため、半角スペースや特殊文字を含むパス環境下でも 100% 安定して動作します。
 </details>
 
 ---
