@@ -213,48 +213,71 @@ class ReconstructionPipeline(QObject):
         ]
         self._exec_cmd(cmd_map)
 
-        # Stage 4: OpenMVS用エクスポート (Undistort)
+        # Stage 4: 最適な疎点群モデルの自動選定 & OpenMVS用変換 (Undistort)
         self.progress_updated.emit(55, "OpenMVS シーン変換 (Undistort)...")
+        submodels = [d for d in sparse_dir.iterdir() if d.is_dir()]
+        if not submodels:
+            raise RuntimeError("COLMAP による 3D 点群再構築に失敗しました。撮影画像の特徴点または重なりが不足している可能性があります。")
+        
+        def _get_model_size(d: Path) -> int:
+            p = d / "points3D.bin"
+            return p.stat().st_size if p.exists() else 0
+
+        best_sparse_dir = max(submodels, key=_get_model_size)
+        self.log_emitted.emit(f"[COLMAP] 最適な点群サブモデル '{best_sparse_dir.name}' を自動選択しました。")
+
         cmd_undistort = [
             self.config.colmap_binary, "image_undistorter",
             "--image_path", str(images_dir),
-            "--input_path", str(sparse_dir / "0"),
+            "--input_path", str(best_sparse_dir),
             "--output_path", str(dense_dir),
             "--output_type", "COLMAP",
         ]
         self._exec_cmd(cmd_undistort)
 
         # Stage 5: OpenMVS 密度再構築 (Dense Point Cloud)
-        self.progress_updated.emit(70, "OpenMVS CUDA 高密度点群生成中 (DensifyPointCloud)...")
-        mvs_scene = openmvs_dir / "scene.mvs"
+        self.progress_updated.emit(70, "OpenMVS 高密度点群生成中 (DensifyPointCloud)...")
         cmd_mvs_import = [
-            os.path.join(self.config.openmvs_dir, "InterfaceCOLMAP"),
-            "-i", str(dense_dir),
-            "-o", str(mvs_scene),
+            os.path.join(self.config.openmvs_dir, "InterfaceCOLMAP.exe" if os.name == 'nt' else "InterfaceCOLMAP"),
+            "-w", str(dense_dir),
+            "-i", ".",
+            "-o", "scene.mvs",
         ]
-        self._exec_cmd(cmd_mvs_import)
+        self._exec_cmd(cmd_mvs_import, cwd=str(dense_dir))
 
         cmd_densify = [
-            os.path.join(self.config.openmvs_dir, "DensifyPointCloud"),
-            str(mvs_scene),
-            "--cuda-device", str(hw.gpu_index),
-            "--max-threads", str(hw.openmvs_cuda_threads),
+            os.path.join(self.config.openmvs_dir, "DensifyPointCloud.exe" if os.name == 'nt' else "DensifyPointCloud"),
+            "-w", str(dense_dir),
+            "-i", "scene.mvs",
+            "-o", "scene_dense.mvs",
+            "--max-threads", str(hw.openmvs_cuda_threads or 0),
         ]
-        self._exec_cmd(cmd_densify)
+        try:
+            self._exec_cmd(cmd_densify, cwd=str(dense_dir))
+        except Exception as e:
+            self.log_emitted.emit(f"[OpenMVS 警告] 高密度点群化スキップ (疎点群から直接メッシュ化します): {e}")
 
         # Stage 6: サーフェスメッシュ化 (ReconstructMesh)
         self.progress_updated.emit(85, "3D サーフェスメッシュ生成 (ReconstructMesh)...")
-        mvs_dense_scene = openmvs_dir / "scene_dense.mvs"
+        dense_scene_file = dense_dir / "scene_dense.mvs"
+        input_mvs = "scene_dense.mvs" if dense_scene_file.exists() else "scene.mvs"
         cmd_mesh = [
-            os.path.join(self.config.openmvs_dir, "ReconstructMesh"),
-            str(mvs_dense_scene),
-            "--cuda-device", str(hw.gpu_index),
+            os.path.join(self.config.openmvs_dir, "ReconstructMesh.exe" if os.name == 'nt' else "ReconstructMesh"),
+            "-w", str(dense_dir),
+            "-i", input_mvs,
+            "-o", "scene_dense_mesh.ply",
         ]
-        self._exec_cmd(cmd_mesh)
+        self._exec_cmd(cmd_mesh, cwd=str(dense_dir))
 
         # Stage 7: 後処理 (Watertight化 & ArUcoスケール校正 & エクスポート)
         self.progress_updated.emit(92, "ArUcoスケール校正 & 水密化 (Watertight)...")
-        raw_ply_path = openmvs_dir / "scene_dense_mesh.ply"
+        raw_ply_path = dense_dir / "scene_dense_mesh.ply"
+        if not raw_ply_path.exists():
+            ply_candidates = list(dense_dir.glob("*.ply"))
+            if ply_candidates:
+                raw_ply_path = max(ply_candidates, key=lambda p: p.stat().st_size)
+            else:
+                raise RuntimeError("OpenMVS による 3D サーフェスメッシュ (PLY) の生成に失敗しました。")
 
         # スケール校正
         scale = POST_PROCESSOR.detect_aruco_scale_factor([p for p in images_dir.glob("*.jpg")])
@@ -307,8 +330,8 @@ class ReconstructionPipeline(QObject):
 
         return final_mesh_path, report
 
-    def _exec_cmd(self, cmd: List[str]):
-        """コマンド実行ラッパー (DLLパス環境変数を自動注入)"""
+    def _exec_cmd(self, cmd: List[str], cwd: Optional[str] = None):
+        """コマンド実行ラッパー (DLLパス環境変数を自動注入 & 作業ディレクトリ対応)"""
         env = os.environ.copy()
         
         # COLMAP & OpenMVS の DLL / lib 検索パスを追加
@@ -329,6 +352,7 @@ class ReconstructionPipeline(QObject):
         process = subprocess.Popen(
             cmd,
             env=env,
+            cwd=cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
