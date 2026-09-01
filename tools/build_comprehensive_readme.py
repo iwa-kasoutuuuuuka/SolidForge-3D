@@ -103,11 +103,15 @@ def main():
    - [9.6 フィラメント・レジン別 3Dプリント物性推奨パラメータ完全表 (12種対応)](#96-フィラメントレジン別-3dプリント物性推奨パラメータ完全表)
    - [9.7 サポート材の除去と後処理・アセトン蒸気平滑化 & レジン二次硬化マニュアル](#97-サポート材の除去と後処理アセトン蒸気平滑化--レジン二次硬化マニュアル)
    - [9.8 マルチカラー 3D プリント (Bambu AMS / Prusa MMU3) 向けカラー STL 出力](#98-マルチカラー-3d-プリント-bambu-ams--prusa-mmu3-向けカラー-stl-出力)
-10. [📁 ディレクトリ構成 & モジュール解説 (Project Structure)](#10-ディレクトリ構成--モジュール解説-project-structure)
 11. [🛠️ インストール & 環境構築 (Installation & Setup)](#11-インストール--環境構築-installation--setup)
+   - [11.1 前提動作環境](#111-前提動作環境)
+   - [11.2 インストール手順 & 依存パッケージ](#112-インストール手順--依存パッケージ)
+   - [11.3 3D 復元エンジン (COLMAP CUDA & OpenMVS) のワンクリック自動セットアップ](#113-3d-復元エンジン-colmap-cuda--openmvs-のワンクリック自動セットアップ)
+   - [11.4 ⚡ ワンクリック起動 (launch.bat / launch.ps1 / CLI)](#114--ワンクリック起動-launchbat--launchps1--cli)
+   - [11.5 📁 ワークスペース構成と出力モデルの保存場所](#115--ワークスペース構成と出力モデルの保存場所)
 12. [🛡️ セキュリティ監査・堅牢化・脆弱性検証 (Security & Vulnerability Audit)](#12-セキュリティ監査堅牢化脆弱性検証-security--vulnerability-audit)
 13. [🧪 単体テストスイート完全リファレンス (Unit Tests Reference - 全35件)](#13-単体テストスイート完全リファレンス-unit-tests-reference---全35件)
-14. [❓ よくある質問・トラブルシューティング全60選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全60選-faq--troubleshooting)
+14. [❓ よくある質問・トラブルシューティング全65選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全65選-faq--troubleshooting)
 15. [📄 ライセンス & 謝辞 (License & Acknowledgements)](#15-ライセンス--謝辞-license--acknowledgements)
    - [15.1 MIT ライセンス条文 (MIT License Full Text)](#151-mit-ライセンス条文-mit-license-full-text)
    - [15.2 ライセンスの許諾範囲と利用条件 (Permissions & Conditions)](#152-ライセンスの許諾範囲と利用条件-permissions--conditions)
@@ -791,13 +795,13 @@ SolidForge 3D/
 
 ## 11. 🛠️ インストール & 環境構築 (Installation & Setup)
 
-### 11.1 前提環境
+### 11.1 前提動作環境
 - **OS**: Windows 11 (64-bit) 推奨 / Windows 10 (64-bit)
-- **Python**: Python 3.10 以上 (Python 3.10 / 3.11 / 3.12 対応)
-- **GPU**: NVIDIA GeForce RTX 5080 (16GB/24GB GDDR7) または RTX 4090 / 3090 / Dual GPU (CUDA 12.x+)
-- **システムメモリ**: 32 GB 以上推奨
+- **Python**: Python 3.10 以上 (Python 3.10 / 3.11 / 3.12 完全対応)
+- **GPU**: NVIDIA GeForce RTX 5080 (16GB/24GB GDDR7 Blackwell) または RTX 4090 / 4080 / 3090 / Multi-GPU 並列クラスタ (CUDA 12.x+)
+- **システムメモリ**: 32 GB 以上推奨 (16GB 以上の環境でも動作可能)
 
-### 11.2 インストール手順
+### 11.2 インストール手順 & 依存パッケージ
 ```powershell
 # 1. リポジトリのクローン
 git clone https://github.com/iwa-kasoutuuuuuka/SolidForge-3D.git
@@ -808,16 +812,47 @@ pip install -r requirements.txt
 
 # 3. 単体テストスイートの実行確認 (35件全件パス)
 python -m unittest discover tests
-
-# 4. アプリケーションの起動
-python main.py
 ```
 
-### 11.3 (オプション) ネイティブ COLMAP & OpenMVS の配置
-ネイティブの COLMAP および OpenMVS バイナリを使用する場合：
-- `COLMAP_PATH`: `colmap.exe` のフルパスを環境変数に設定。
-- `OPENMVS_DIR`: OpenMVS のバイナリフォルダパスを設定。
-*※ バイナリ未配置時でも、SolidForge 3D 内蔵の高品位シミュレーションエンジンにより、全機能（AI 前処理、ArUco 実寸校正、RANSAC カット、SLA 中空化、Watertight 修復、OrcaSlicer 連携）を完全動作可能です。*
+### 11.3 3D 復元エンジン (COLMAP CUDA & OpenMVS) のワンクリック自動セットアップ
+実際の撮影写真から本物の 3D ポリゴンメッシュを実計算するために必要な **COLMAP (Windows CUDA / SiftGPU 版)** および **OpenMVS (Windows x64 / CUDA 高密度メッシュ化版)** は、付属の自動セットアップスクリプトでワンコマンドで導入できます：
+
+```powershell
+# COLMAP (CUDA版) および OpenMVS (Win64版) を自動ダウンロード・配置
+python tools/setup_photogrammetry_binaries.py
+```
+- 本スクリプトを実行すると、公式バイナリが `bin/colmap` および `bin/openmvs` に自動展開されます。
+- SolidForge 3D 起動時に自動でローカル `bin/` を最優先検出するため、**Windows のシステム環境変数（PATH）を手動設定する必要は一切ありません**。
+
+### 11.4 ⚡ ワンクリック起動 (launch.bat / launch.ps1 / CLI)
+環境に合わせて以下のいずれかの方法で即座にアプリを起動できます：
+
+1. **エクスプローラーからワンクリック起動（最も簡単・推奨）**:
+   - フォルダ内の **`launch.bat`** をダブルクリックするだけ。
+   - 依存パッケージが導入されている Python 3.10 を自動検知して直接起動します。万が一のエラー時も画面を保持して診断ログを表示します。
+2. **PowerShell スクリプトから起動**:
+   - `.\launch.ps1` を実行。
+3. **コマンドラインから直接起動**:
+   ```powershell
+   python main.py
+   ```
+
+### 11.5 📁 ワークスペース構成と出力モデルの保存場所
+メッシュ生成（Forge 3D Mesh）を実行すると、以下のディレクトリに日時別の専用フォルダが自動生成されます：
+
+```
+e:\SolidForge 3D\workspace\reconstruction_<タイムスタンプ>\
+```
+
+| 出力ファイル / ディレクトリ | 内容と用途 |
+| :--- | :--- |
+| **`model_print_ready.stl`**<br>(または `.obj` / `.ply` / `.gltf`) | **完成した3Dプリント用モデル**<br>実寸ミリメートル（1:1 mm）校正、底面フラットカット、水密化（Watertight）修復が完了したバイナリファイル。 |
+| **`enhanced_images/`** | **RTX 5080 AI 復元画像**<br>Tensor Cores (NAFNet / Real-ESRGAN) で手ブレ除去・超解像された高画質写真群。 |
+| **`images/`** | インポート・ステージングされた撮影元写真データ。 |
+| **`colmap/`** | SfM によるカメラ位置姿勢推定値および疎な 3D 点群データ (`database.db`, `sparse/0/`)。 |
+| **`openmvs/`** | 高密度点群 (`scene_dense.mvs`) およびサーフェスメッシュ中間データ。 |
+
+*※ メッシュ生成完了後、画面右側パネルの **「📂 出力フォルダを開く」** ボタンを押すだけで、該当フォルダを Windows エクスプローラーで即座に直接開くことができます。*
 
 ---
 
@@ -863,7 +898,7 @@ OK
     parts.append("""
 ---
 
-## 14. ❓ よくある質問・トラブルシューティング全60選 (FAQ & Troubleshooting)
+## 14. ❓ よくある質問・トラブルシューティング全65選 (FAQ & Troubleshooting)
 
 <details>
 <summary><b>Q1. SONY ZV-E10 が「未接続」となり Live View が表示されません</b></summary>
@@ -1163,6 +1198,33 @@ AESUB Blue 等の「昇華性（消える）スプレー」は、塗布後 2〜4
 <details>
 <summary><b>Q60. SolidForge 3D の開発に参加したりコードを拡張するには？</b></summary>
 本リポジトリはモジュール化されたクリーンな Python / PySide6 / PyTorch 構造になっています。Pull Request や GitHub Discussions での機能提案を心より歓迎いたします！
+</details>
+
+<details>
+<summary><b>Q61. 3Dメッシュ生成を実行したところ、写真と全く異なる「球体と円柱台座」が生成されました。何故ですか？</b></summary>
+PC 内に実計算エンジンである <b>COLMAP (Windows CUDA 版)</b> および <b>OpenMVS (Windows x64 版)</b> の実行バイナリがまだ配置されていない場合、安全機構として「GUI 描画・水密化・3D スライサー連携の動作確認用サンプルモデル（台座に乗った球体）」が出力されます。<br>
+<code>python tools/setup_photogrammetry_binaries.py</code> を実行してバイナリを自動セットアップすると、実際の写真から本物の物体形状を持った実スキャン 3D メッシュが即座に生成されるようになります。
+</details>
+
+<details>
+<summary><b>Q62. 読み込んだ画像がすべて「除外推奨（赤色）」になってしまう原因と対処法は？</b></summary>
+右側設定パネルの Quality Gate「ブレ鮮鋭度閾値 (Laplacian)」の初期基準値（50.0〜80.0）を下回った場合に警告が表示されます。被写体の周囲に白いデスクや単色背景の割合が多い場合、写真自体にピントが合っていても全体の数値が控えめになるためです。<br>
+<b>対処法</b>：右側パネルの「ブレ鮮鋭度閾値」スライダーを <b>40 または 30</b> に下げると、ギャラリー内のサムネイルがリアルタイムに連動して「合格（緑色）」に切り替わります。また、ギャラリー上部の「全選択」ボタンで一括使用することも可能です。
+</details>
+
+<details>
+<summary><b>Q63. SONY ZV-E10 以外のカメラやスマホで Live View 撮影（有線・WiFi）を行う方法は？</b></summary>
+画面最上部バーの青色ボタン <b>「📷 カメラ切替 / スマホ接続」</b> または Live View タブ下の「⚙️ カメラ選択」をクリックしてください。開いたダイアログから「スマートフォン (IP Webcam / DroidCam)」「Insta360 (Ace Pro 2 / X5 / X4)」「各社一眼レフ / USB Webカメラ」「3Dシミュレータ」を自由に選択して切り替えることができます。
+</details>
+
+<details>
+<summary><b>Q64. launch.bat をダブルクリックしても起動しない・一瞬で黒い画面が消える場合の対策は？</b></summary>
+Windows のショートカット実行時に <code>WindowsApps\python.exe</code>（ストア用ダミー）が誤優先されていた可能性があります。最新の <code>launch.bat</code> はライブラリが導入された <code>Python 3.10</code>（<code>%LOCALAPPDATA%\Programs\Python\Python310\python.exe</code>）を直接フルパスで呼び出すように堅牢化されており、万が一のエラー時も画面を保持（pause）して原因を表示します。
+</details>
+
+<details>
+<summary><b>Q65. 生成された 3D モデル（STL/OBJ等）はどこに保存され、どのように開けますか？</b></summary>
+プロジェクトルートの <code>workspace/reconstruction_<タイムスタンプ>/model_print_ready.stl</code> に保存されます。3D メッシュ生成完了後、画面右側パネルに有効化される <b>「📂 出力フォルダを開く」</b> ボタンをクリックすると、保存先フォルダが Windows エクスプローラーで直接開きます。また「🖨️ 3Dビューア / スライサーで開く」を押すと OrcaSlicer / Bambu Studio / Windows 3D Viewer が自動起動します。
 </details>
 
 ---
