@@ -197,6 +197,10 @@ class MainWindow(QMainWindow):
         scroll.setStyleSheet("QScrollArea { border: none; background-color: transparent; }")
 
         container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(12)
+
         # 1. Multi-GPU & ハードウェアクラスタグループ
         gpu_group = QGroupBox("⚡ GPU & Multi-GPU クラスタ設定")
         gpu_layout = QFormLayout(gpu_group)
