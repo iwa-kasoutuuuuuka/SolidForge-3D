@@ -186,5 +186,10 @@ class AppConfig:
     
     default_export_format: str = "STL (.stl)"
 
+    @property
+    def ai(self) -> AIEnhancementConfig:
+        """ai_enhancement へのエイリアスプロパティ"""
+        return self.ai_enhancement
+
 
 CONFIG = AppConfig()

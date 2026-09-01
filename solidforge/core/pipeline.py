@@ -115,7 +115,7 @@ class ReconstructionPipeline(QObject):
 
             # 2.5. AI 背景自動除去 & 被写体分離マスク生成 (Object Segmentation)
             masks_dir: Optional[Path] = None
-            if self.config.ai.enable_ai_background_removal:
+            if self.config.ai_enhancement.enable_ai_background_removal:
                 self.progress_updated.emit(10, "AI 背景自動除去中 (被写体セグメンテーション)...")
                 self.log_emitted.emit("[AI Segmenter] U2Net AI 背景自動除去を実行中 (被写体切り抜き & 背景ノイズ遮断)...")
                 masks_dir = work_dir / "masks"
@@ -123,7 +123,7 @@ class ReconstructionPipeline(QObject):
                 AI_SEGMENTER.process_batch(
                     current_images,
                     masks_dir,
-                    margin_pixels=self.config.ai.ai_mask_margin,
+                    margin_pixels=self.config.ai_enhancement.ai_mask_margin,
                     progress_cb=lambda pct, msg: self.progress_updated.emit(10 + int(pct * 0.05), msg),
                 )
                 self.log_emitted.emit(f"[AI Segmenter] {len(current_images)} 枚の被写体マスク生成完了。")
