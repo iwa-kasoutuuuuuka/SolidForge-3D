@@ -137,23 +137,52 @@ class ImageCardWidget(QFrame):
 
         bot_layout.addStretch()
 
-        badge_text = "合格" if self.eval_res.is_accepted else "除外推奨"
-        badge_style = "background-color: #00c853; color: #000; font-weight: bold; border-radius: 3px; padding: 1px 4px; font-size: 10px;" if self.eval_res.is_accepted else "background-color: #d50000; color: #fff; font-weight: bold; border-radius: 3px; padding: 1px 4px; font-size: 10px;"
-        
-        badge_label = QLabel(badge_text)
-        badge_label.setStyleSheet(badge_style)
+        self.badge_label = QLabel("合格" if self.eval_res.is_accepted else "除外推奨")
+        self._update_badge_style(self.eval_res.is_accepted)
         if self.eval_res.rejection_reasons:
-            badge_label.setToolTip("\n".join(self.eval_res.rejection_reasons))
-        bot_layout.addWidget(badge_label)
+            self.badge_label.setToolTip("\n".join(self.eval_res.rejection_reasons))
+        bot_layout.addWidget(self.badge_label)
 
         layout.addLayout(bot_layout)
+
+    def _update_badge_style(self, accepted: bool):
+        border_color = "#00e676" if accepted else "#ff5252"
+        self.setStyleSheet(f"""
+            ImageCardWidget {{
+                background-color: #1a1e2b;
+                border: 1px solid {border_color};
+                border-radius: 6px;
+                padding: 4px;
+            }}
+            ImageCardWidget:hover {{
+                border: 2px solid #00e5ff;
+            }}
+        """)
+        if accepted:
+            self.badge_label.setText("合格")
+            self.badge_label.setStyleSheet(
+                "background-color: #00c853; color: #000; font-weight: bold; border-radius: 3px; padding: 1px 4px; font-size: 10px;"
+            )
+        else:
+            self.badge_label.setText("除外推奨")
+            self.badge_label.setStyleSheet(
+                "background-color: #d50000; color: #fff; font-weight: bold; border-radius: 3px; padding: 1px 4px; font-size: 10px;"
+            )
+
+    def update_thresholds(self, blur_threshold: float, min_features: int):
+        accepted = (self.eval_res.blur_score >= blur_threshold) and (self.eval_res.feature_count >= min_features)
+        self.eval_res.is_accepted = accepted
+        self._update_badge_style(accepted)
+        self.set_checked(accepted)
 
     def _on_check_changed(self, state):
         self.is_checked = (state == Qt.Checked.value or state == 2)
         self.toggled.emit(self.is_checked)
 
     def set_checked(self, checked: bool):
+        self.checkbox.blockSignals(True)
         self.checkbox.setChecked(checked)
+        self.checkbox.blockSignals(False)
         self.is_checked = checked
 
 
@@ -299,6 +328,11 @@ class GalleryWidget(QWidget):
     def set_all_checked(self, checked: bool):
         for c in self.cards:
             c.set_checked(checked)
+        self._update_status()
+
+    def update_thresholds(self, blur_threshold: float, min_features: int):
+        for c in self.cards:
+            c.update_thresholds(blur_threshold, min_features)
         self._update_status()
 
     def clear_gallery(self):

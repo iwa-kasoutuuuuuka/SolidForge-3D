@@ -366,9 +366,11 @@ class MainWindow(QMainWindow):
     def _on_blur_slider_changed(self, val: int):
         self.lbl_blur_val.setText(str(val))
         QUALITY_GATE.config.blur_threshold = float(val)
+        self.gallery_widget.update_thresholds(float(val), QUALITY_GATE.config.min_feature_count)
 
     def _on_feat_spin_changed(self, val: int):
         QUALITY_GATE.config.min_feature_count = val
+        self.gallery_widget.update_thresholds(QUALITY_GATE.config.blur_threshold, val)
 
     def _on_photo_captured_from_camera(self, file_path_str: str, eval_res):
         p = Path(file_path_str)

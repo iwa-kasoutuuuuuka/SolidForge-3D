@@ -89,8 +89,8 @@ class DirectToPrintConfig:
 @dataclass
 class QualityGateConfig:
     """画像品質判定 (Quality Gate) 設定"""
-    blur_threshold: float = 120.0
-    min_feature_count: int = 450
+    blur_threshold: float = 50.0
+    min_feature_count: int = 300
     feature_extractor: Literal["SIFT", "ORB"] = "SIFT"
     draw_feature_points: bool = True
     draw_grid_guide: bool = True
