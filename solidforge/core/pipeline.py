@@ -63,8 +63,8 @@ class ReconstructionPipeline(QObject):
     def _run_pipeline(
         self,
         image_paths: List[Path],
-        output_format: str,
-        custom_output_dir: Optional[Path],
+        output_format: str = "stl",
+        custom_output_dir: Optional[Path] = None,
     ):
         """パイプライン実行メインスレッド"""
         start_time = time.time()
@@ -231,6 +231,10 @@ class ReconstructionPipeline(QObject):
             "--image_path", str(images_dir),
             "--output_path", str(sparse_dir),
             "--Mapper.num_threads", str(hw.parallel_matching_threads),
+            "--Mapper.init_min_num_inliers", "15",
+            "--Mapper.abs_pose_min_num_inliers", "10",
+            "--Mapper.min_num_matches", "10",
+            "--Mapper.filter_min_tri_angle", "1.5",
         ]
         self._exec_cmd(cmd_map)
 
