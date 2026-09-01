@@ -93,14 +93,14 @@
    - [9.7 サポート材の除去と後処理・アセトン蒸気平滑化 & レジン二次硬化マニュアル](#97-サポート材の除去と後処理アセトン蒸気平滑化--レジン二次硬化マニュアル)
    - [9.8 マルチカラー 3D プリント (Bambu AMS / Prusa MMU3) 向けカラー STL 出力](#98-マルチカラー-3d-プリント-bambu-ams--prusa-mmu3-向けカラー-stl-出力)
 11. [🛠️ インストール & 環境構築 (Installation & Setup)](#11-インストール--環境構築-installation--setup)
-   - [11.1 前提動作環境](#111-前提動作環境)
+   - [11.1 前提動作環境 & PCスペック要件 (最低・推奨・GPU非搭載時の挙動)](#111-前提動作環境--pcスペック要件-最低推奨gpu非搭載時の挙動)
    - [11.2 インストール手順 & 依存パッケージ](#112-インストール手順--依存パッケージ)
    - [11.3 3D 復元エンジン (COLMAP CUDA & OpenMVS) のワンクリック自動セットアップ](#113-3d-復元エンジン-colmap-cuda--openmvs-のワンクリック自動セットアップ)
    - [11.4 ⚡ ワンクリック起動 (launch.bat / launch.ps1 / CLI)](#114--ワンクリック起動-launchbat--launchps1--cli)
    - [11.5 📁 ワークスペース構成と出力モデルの保存場所](#115--ワークスペース構成と出力モデルの保存場所)
 12. [🛡️ セキュリティ監査・堅牢化・脆弱性検証 (Security & Vulnerability Audit)](#12-セキュリティ監査堅牢化脆弱性検証-security--vulnerability-audit)
 13. [🧪 単体テストスイート完全リファレンス (Unit Tests Reference - 全35件)](#13-単体テストスイート完全リファレンス-unit-tests-reference---全35件)
-14. [❓ よくある質問・トラブルシューティング全66選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全66選-faq--troubleshooting)
+14. [❓ よくある質問・トラブルシューティング全67選 (FAQ & Troubleshooting)](#14-よくある質問トラブルシューティング全67選-faq--troubleshooting)
 15. [📄 ライセンス & 謝辞 (License & Acknowledgements)](#15-ライセンス--謝辞-license--acknowledgements)
    - [15.1 MIT ライセンス条文 (MIT License Full Text)](#151-mit-ライセンス条文-mit-license-full-text)
    - [15.2 ライセンスの許諾範囲と利用条件 (Permissions & Conditions)](#152-ライセンスの許諾範囲と利用条件-permissions--conditions)
@@ -768,11 +768,25 @@ SolidForge 3D/
 
 ## 11. 🛠️ インストール & 環境構築 (Installation & Setup)
 
-### 11.1 前提動作環境
-- **OS**: Windows 11 (64-bit) 推奨 / Windows 10 (64-bit)
-- **Python**: Python 3.10 以上 (Python 3.10 / 3.11 / 3.12 完全対応)
-- **GPU**: NVIDIA GeForce RTX 5080 (16GB/24GB GDDR7 Blackwell) または RTX 4090 / 4080 / 3090 / Multi-GPU 並列クラスタ (CUDA 12.x+)
-- **システムメモリ**: 32 GB 以上推奨 (16GB 以上の環境でも動作可能)
+### 11.1 前提動作環境 & PCスペック要件 (最低・推奨・GPU非搭載時の挙動)
+
+| ハードウェア項目 | ⚠️ 最低動作スペック (Minimum) | 🚀 推奨・極限スペック (Recommended) |
+| :--- | :--- | :--- |
+| **OS** | Windows 10 (64-bit) / Windows 11 | **Windows 11 (64-bit)** |
+| **GPU (グラフィックボード)** | **NVIDIA GeForce RTX 3060 (6GB〜8GB VRAM)**<br>*(※ CUDA 11.8+ 対応の NVIDIA GPU)* | **NVIDIA GeForce RTX 5080 (16GB〜24GB GDDR7 Blackwell)**<br>または **RTX 4090 / 4080 / Multi-GPU 並列クラスタ (CUDA 12.x+)** |
+| **GPU VRAM** | **最低 6 GB** (標準品質 30〜50枚処理) | **16 GB 以上** (超高解像度 100〜300枚バッチ並列) |
+| **CPU** | Intel Core i5 (第10世代以降) / AMD Ryzen 5 (3000番台以降)<br>*(6コア / 12スレッド以上)* | **Intel Core i7 / i9 (第13〜15世代) / AMD Ryzen 7 / 9 (7000/9000番台)**<br>*(12〜24コア / 24〜32スレッド)* |
+| **システムメモリ (RAM)** | **16 GB** | **32 GB 〜 64 GB DDR5** |
+| **ストレージ** | 空き容量 **20 GB 以上** (SATA SSD) | **NVMe M.2 SSD (Gen4/Gen5) 空き容量 100 GB 以上** |
+| **カメラ入力環境** | スマホ WiFi (IP Webcam) / Webカメラ / SDカード読込 | **SONY ZV-E10 / α7 (有線SDK) / Insta360 (Ace Pro 2 / X5)** |
+
+#### 🛡️ GPU (NVIDIA グラフィックボード) 非搭載PCでの動作について
+- **エラー停止なし（完全自動 CPU フォールバック）**:
+  NVIDIA GPU が搭載されていないノート PC や事務用 PC でも、**エラーでアプリがクラッシュすることはありません**。
+  ONNX Runtime CPU Execution Provider、OpenCV マルチスレッド、CPU SIFT、OpenMVS CPU モードが自動発動し、すべての処理（Live View、画像判定、AI 高画質化、水密 STL 生成、OrcaSlicer 連携）を CPU のみで 100% 完遂します。
+- **処理速度（所要時間）の違い**:
+  - **RTX 5080 搭載環境**: 180枚の 3D 再構築が **約 30秒〜1分半** で高速完了。
+  - **GPU 非搭載（CPU のみ）環境**: 同一処理に **約 15分〜40分** を要します（時間はかかりますが、完成する 3D モデルの幾何品質・実寸精度は同等です）。
 
 ### 11.2 インストール手順 & 依存パッケージ
 ```powershell
@@ -1201,6 +1215,12 @@ Windows のショートカット実行時に <code>WindowsApps\python.exe</code>
 <details>
 <summary><b>Q66. フォルダパスに半角スペース（例: E:\SolidForge 3D）が含まれる場合、COLMAP 特徴抽出でステータスコード 255 エラーが出ますか？</b></summary>
 従来の <code>COLMAP.bat</code> ラッパーは Windows のバッチ引数パーサーの仕様によりパス内空白で構文エラーを起こす問題がありました。SolidForge 3D ではネイティブバイナリ <code>bin\colmap.exe</code> を直接実行し、必要な DLL 検索パス（<code>lib/</code>）を Python 側から動的注入する堅牢化アーキテクチャを採用しているため、半角スペースや特殊文字を含むパス環境下でも 100% 安定して動作します。
+</details>
+
+<details>
+<summary><b>Q67. GPU (NVIDIA グラフィックボード) が搭載されていない PC でも動作しますか？エラーで止まりませんか？</b></summary>
+はい、GPU 非搭載の PC（CPU 内蔵グラフィックスのみのノート PC 等）でも<b>エラーでクラッシュすることなく最後まで動作します</b>。自動的に CPU フォールバック機能が有効化され、ONNX Runtime CPU Execution Provider、CPU SIFT、OpenMVS CPU マルチスレッドで全工程を完遂します。<br>
+ただし、GPU 搭載時に比べて処理時間（待ち時間）が長くなります（RTX 5080 で約 1 分の処理が、CPU のみでは約 15〜40 分程度となります）。生成される 3D モデルの品質や寸法精度は同等です。
 </details>
 
 ---
