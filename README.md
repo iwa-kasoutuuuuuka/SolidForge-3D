@@ -6,6 +6,7 @@
 ### SONY ZV-E10 / Insta360 / スマートフォン × NVIDIA GeForce RTX 5080 & Multi-GPU 完全最適化 3Dプリント直結型フォトグラメトリスタジオ
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![100% Offline Local](https://img.shields.io/badge/Local%20Only-100%25%20Offline%20%7C%20Zero%20Cloud-00c853?style=for-the-badge&logo=shield)](https://github.com/)
 [![PySide6](https://img.shields.io/badge/GUI-PySide6%20Qt6-41CD52?style=for-the-badge&logo=qt&logoColor=white)](https://pypi.org/project/PySide6/)
 [![CUDA RTX 5080 Extreme](https://img.shields.io/badge/GPU-RTX%205080%20%2B%20Multi--GPU%20Cluster-76B900?style=for-the-badge&logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
@@ -19,6 +20,9 @@
 ## 📑 総合目次 (Table of Contents)
 
 1. [🌟 プロジェクト概要と基本理念 (Overview & Philosophy)](#1-プロジェクト概要と基本理念-overview--philosophy)
+   - [1.1 開発背景：従来のフォトグラメトリと3Dプリントの間に横たわる深い溝](#11-開発背景従来のフォトグラメトリと3dプリントの間に横たわる深い溝)
+   - [1.2 SolidForge 3D の設計思想：「撮る・鍛える・刷る」の完全自動直結](#12-solidforge-3d-の設計思想撮る鍛える刷るの完全自動直結)
+   - [1.3 🔒 100% 完全ローカル動作保証（オフライン・エアギャップ環境対応・通信ゼロ・API料金ゼロ）](#13--100-完全ローカル動作保証オフラインエアギャップ環境対応通信ゼロapi料金ゼロ)
 2. [✨ SolidForge 3D の主要機能一覧 (Key Features)](#2-solidforge-3d-の主要機能一覧-key-features)
 3. [📷 対応カメラ & 機種別接続・撮影完全マニュアル (Camera & Device Guides)](#3-対応カメラ--機種別接続撮影完全マニュアル-camera--device-guides)
    - [3.1 SONY α / VLOGCAM シリーズ (ZV-E10 Mark 1/2, α7, FX30)](#31-sony-α--vlogcam-シリーズ)
@@ -132,6 +136,16 @@
   ArUcoマーカーによる実寸ミリメートル（1:1 mm）自動校正、RANSACによる接地面自動検出と底面完全フラットカット（Z=0 接地化）、SLA中空化とレジン排出穴開口、完全水密化修復（Watertight Guarantee）をワンストップで実行。
 - **「OrcaSlicer / 3Dスライサーへの自動配置・直行起動」**:
   生成されたバイナリSTLをOrcaSlicerやBambu Studioに直接引き渡し、ビルドプレート中央に自動配置した状態でスライサーを起動。ユーザーはボタンを押すだけで即座にプリントプレビューへ移行できます。
+
+### 1.3 🔒 100% 完全ローカル動作保証（オフライン・エアギャップ環境対応・通信ゼロ・API料金ゼロ）
+SolidForge 3D は、**「完全ローカルのみ」で動作し、インターネット接続がなくてもすべての機能が100%利用可能**です。外部ネットワークやクラウドサーバーに接続しないと使えない機能は**一切ありません**。
+
+| ローカル設計の柱 | 具体的なメリットと技術仕様 |
+| :--- | :--- |
+| **🛡️ クラウド通信ゼロ / 完全プライバシー保護** | 撮影した写真や生成された 3D メッシュ、CAD 照合データが外部サーバーへ送信・流出することは絶対にありません。企業秘密の試作品、未発表製品、機密性の高い工業部品、医療・歯科データも安心してスキャン可能です。 |
+| **⚡ ローカル GPU TensorRT / CUDA 直結演算** | AI ブレ除去・超解像（NAFNet / Real-ESRGAN）やラプラシアン鮮鋭度演算は、すべてローカルの NVIDIA RTX GPU（Tensor Cores / GDDR7 VRAM）上で直接実行されます。通信レイテンシやアップロード待ち時間がゼロです。 |
+| **💰 外部 API 料金・月額課金ゼロ** | クラウド API や従量課金トークンは一切不使用。追加費用なしで何千枚・何万枚でも無制限に 3D 化・高解像化処理を実行できます。 |
+| **🔌 完全オフライン / エアギャップ環境対応** | インターネット回線のない電波暗室、地下工場、屋外現場、セキュリティで隔離されたエアギャップ（Air-gapped）PC でも全機能がそのまま 100% 稼働します。 |
 
 ---
 
