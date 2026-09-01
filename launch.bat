@@ -1,56 +1,45 @@
 @echo off
-setlocal enabledelayedexpansion
 chcp 65001 >nul
 cd /d "%~dp0"
-
-title SolidForge 3D - Studio Launcher
+title SolidForge 3D
 
 echo ========================================================
 echo   ⚡ SolidForge 3D (ソリッドフォージ 3D) 起動中...
 echo ========================================================
 echo.
 
-:: 1. Python 実行可能ファイルの検出 (優先順位付け)
-set "PYTHON_EXE="
-
-if exist "C:\Users\Gisa_M3\AppData\Local\Programs\Python\Python310\python.exe" (
-    set "PYTHON_EXE=C:\Users\Gisa_M3\AppData\Local\Programs\Python\Python310\python.exe"
+:: 1. ユーザー環境の Python 3.10 を直接実行
+if exist "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" (
+    echo [INFO] Python 3.10 を検出しました。起動します...
+    "%LOCALAPPDATA%\Programs\Python\Python310\python.exe" "%~dp0main.py"
+    if errorlevel 1 goto :error
+    goto :end
 )
 
-if "%PYTHON_EXE%"=="" (
-    where py >nul 2>&1
-    if !errorlevel! equ 0 (
-        set "PYTHON_EXE=py -3.10"
-    )
+:: 2. py ランチャーによる実行
+where py >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] py ランチャーで起動します...
+    py -3.10 "%~dp0main.py"
+    if errorlevel 1 goto :error
+    goto :end
 )
 
-if "%PYTHON_EXE%"=="" (
-    where python >nul 2>&1
-    if !errorlevel! equ 0 (
-        set "PYTHON_EXE=python"
-    )
+:: 3. システム PATH の python による実行
+where python >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [INFO] システム python で起動します...
+    python "%~dp0main.py"
+    if errorlevel 1 goto :error
+    goto :end
 )
 
-if "%PYTHON_EXE%"=="" (
-    echo [ERROR] 適切な Python 実行環境が見つかりませんでした。
-    echo Python 3.10+ がインストールされているかご確認ください。
-    echo.
-    pause
-    exit /b 1
-)
-
-echo [INFO] 使用する Python: %PYTHON_EXE%
-echo [INFO] アプリケーションを起動しています...
+:error
 echo.
+echo ========================================================
+echo [ERROR] アプリケーションの起動に失敗しました。
+echo ========================================================
+echo.
+pause
 
-:: 2. アプリケーションの実行 (エラー発生時は画面を保持)
-%PYTHON_EXE% main.py
-if !errorlevel! neq 0 (
-    echo.
-    echo ========================================================
-    echo [ERROR] アプリケーションの実行が異常終了しました (コード: !errorlevel!)。
-    echo 上記のエラーメッセージをご確認ください。
-    echo ========================================================
-    echo.
-    pause
-)
+:end
