@@ -124,12 +124,11 @@ class PostProcessingConfig:
 
 
 def _find_colmap_binary() -> str:
-    """ローカル bin/colmap またはシステム PATH から COLMAP を自動検出"""
+    """ローカル bin/colmap またはシステム PATH から COLMAP 実行バイナリ (.exe) を自動検出"""
     candidates = [
-        BASE_DIR / "bin" / "colmap" / "COLMAP.bat",
-        BASE_DIR / "bin" / "colmap" / "colmap.bat",
-        BASE_DIR / "bin" / "colmap" / "colmap.exe",
         BASE_DIR / "bin" / "colmap" / "bin" / "colmap.exe",
+        BASE_DIR / "bin" / "colmap" / "colmap.exe",
+        BASE_DIR / "bin" / "colmap" / "bin" / "colmap",
     ]
     for c in candidates:
         if c.exists():
@@ -141,6 +140,9 @@ def _find_colmap_binary() -> str:
     w = shutil.which("colmap")
     if w:
         return w
+    # フォールバック
+    if (BASE_DIR / "bin" / "colmap" / "COLMAP.bat").exists():
+        return str(BASE_DIR / "bin" / "colmap" / "COLMAP.bat")
     return "colmap"
 
 

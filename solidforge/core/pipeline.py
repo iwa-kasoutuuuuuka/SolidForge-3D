@@ -308,9 +308,27 @@ class ReconstructionPipeline(QObject):
         return final_mesh_path, report
 
     def _exec_cmd(self, cmd: List[str]):
-        """コマンド実行ラッパー"""
+        """コマンド実行ラッパー (DLLパス環境変数を自動注入)"""
+        env = os.environ.copy()
+        
+        # COLMAP & OpenMVS の DLL / lib 検索パスを追加
+        extra_paths = [
+            str(self.config.workspace_dir.parent / "bin" / "colmap" / "lib"),
+            str(self.config.workspace_dir.parent / "bin" / "colmap" / "bin"),
+            str(self.config.workspace_dir.parent / "bin" / "openmvs"),
+            str(self.config.openmvs_dir),
+        ]
+        curr_path = env.get("PATH", "")
+        env["PATH"] = ";".join(extra_paths) + ";" + curr_path
+        
+        # Qt プラグインパス設定 (COLMAP用)
+        qt_plugin_path = str(self.config.workspace_dir.parent / "bin" / "colmap" / "lib" / "plugins")
+        if os.path.exists(qt_plugin_path):
+            env["QT_PLUGIN_PATH"] = qt_plugin_path
+
         process = subprocess.Popen(
             cmd,
+            env=env,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
