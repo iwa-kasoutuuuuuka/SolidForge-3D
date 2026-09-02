@@ -23,7 +23,7 @@ def main():
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
 [![OrcaSlicer Ready](https://img.shields.io/badge/Slicer-OrcaSlicer%20%2F%20Bambu%20Studio-00e5ff?style=for-the-badge)](https://github.com/SoftFever/OrcaSlicer)
 [![Direct to Print](https://img.shields.io/badge/3D%20Print-Vectorized%20RANSAC-ffd600?style=for-the-badge)](https://en.wikipedia.org/wiki/STL_(file_format))
-[![Tests](https://img.shields.io/badge/Unit%20Tests-42%2F42%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-45%2F45%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
 [![Security Hardened](https://img.shields.io/badge/Security-CWE%20Audited-blue?style=for-the-badge)](https://cwe.mitre.org/)
 
 ---
@@ -694,6 +694,18 @@ Blackwell 世代で新設された FP8 Tensor Core を活用し、モデルウ�
 2. **OpenMVS RefineMesh 光度勾配降下法 (Photometric Refinement)**:
    - メッシュの各頂点位置 $\mathbf{v}_i$ を、撮影写真群のピクセル明暗テクスチャと完全に一致するよう光度誤差勾配 $\nabla E_{\text{photo}}(\mathbf{v}_i)$ に沿って微小移動最適化。
    - これにより、平面は鏡面のように平滑になり、刻印文字や細いエッジ、ネジ山の境界が CAD 設計品並みにシャープに浮き彫りになります。
+
+### 7.9 🤖 撮影画像 AI 自動認識 & 最適パラメータ導出エンジン (Auto-Pilot / Scene Auto-Profiler)
+写真群がインポートされた瞬間に、代表的な 6 枚の視点画像を 0.2 秒で高速サンプリング解析し、被写体の物理的特性に最も適したパイプライン設定を自動的に導出・UI に適用します：
+1. **被写体サイズ・画面占有率 ($\eta$) 認識**:
+   - $\eta < 12\%$ (ライター、指輪、ボルト等の小型被写体): AI 背景除去 ON、極限高精度 SIFT (Peak 0.002, 16k 点)、RefineMesh ON、自動適応 60mm スケーリングを自動構成。
+   - $12\% \le \eta \le 45\%$ (フィギュア、靴、ブラケット等の中型造形物): 高精度 SIFT、AI 背景除去 ON、Level 1 深度点群。
+   - $\eta > 45\%$ (家具、人物、空間、マクロ撮影): 高速バランスモード (Level 2 深度点群) で処理時間を最小化。
+2. **表面テクスチャ周波数・反射特性解析**:
+   - Sobel 勾配強度の標準偏差から表面の平滑度・無地度合いを評価。平滑プラスチックや金属などの低テクスチャ素材では、SIFT 感度を最大化 (Peak 0.0015) し、エピポーラ幾何ガイドマッチングと AI 鮮鋭化を自動ブースト。
+3. **ArUco 実寸マーカーの自動探知**:
+   - 画像内に ArUco マーカーが存在するか瞬時にスキャン。マーカー検知時は 1:1 実寸ミリメートル校正モードへ自動移行します。
+
 
 ---
 

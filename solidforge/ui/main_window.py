@@ -255,6 +255,14 @@ class MainWindow(QMainWindow):
         prec_layout = QFormLayout(prec_group)
         prec_layout.setSpacing(8)
 
+        self.btn_auto_tune = QPushButton("🤖 撮影画像から最適設定を自動認識 (Auto-Tune)")
+        self.btn_auto_tune.setStyleSheet(
+            "background-color: #0d2238; color: #00e5ff; border: 1px solid #00e5ff; border-radius: 4px; padding: 6px; font-weight: bold;"
+        )
+        self.btn_auto_tune.setToolTip("読み込まれた写真群（被写体サイズ、テクスチャ、明暗、ArUcoマーカー等）をAI解析し、最も綺麗に3D化できる設定を自動適用します。")
+        self.btn_auto_tune.clicked.connect(self._on_auto_tune_clicked)
+        prec_layout.addRow(self.btn_auto_tune)
+
         self.combo_precision = QComboBox()
         self.combo_precision.addItems([
             "💎 極限高精度 (Ultra-Precision) [推奨]",
@@ -379,6 +387,41 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         CAMERA_MANAGER.photo_captured.connect(self._on_photo_captured_from_camera)
         PIPELINE.reconstruction_finished.connect(self._on_reconstruction_finished)
+        self.gallery_widget.batch_import_completed.connect(self._on_auto_tune_silent)
+
+    def _apply_analysis_result(self, res, notify_user: bool = False):
+        """画像解析結果を UI コントロールへ自動反映"""
+        self.chk_bg_removal.setChecked(res.rec_enable_bg_removal)
+        self.chk_refine_mesh.setChecked(res.rec_enable_refine_mesh)
+        self.chk_guided_matching.setChecked(res.rec_enable_guided_matching)
+        self.slider_ai_sharpen.setValue(int(res.rec_ai_sharpen_strength * 100))
+
+        if res.rec_precision_mode == "ULTRA_HIGH":
+            self.combo_precision.setCurrentIndex(0)
+        elif res.rec_precision_mode == "BALANCED":
+            self.combo_precision.setCurrentIndex(1)
+        elif res.rec_precision_mode == "EXTREME_CAD":
+            self.combo_precision.setCurrentIndex(2)
+
+        self.log_terminal.append_log(res.summary_text_ja)
+        if notify_user:
+            QMessageBox.information(self, "AI 最適設定を自動適用しました", res.summary_text_ja)
+
+    def _on_auto_tune_clicked(self):
+        images = self.gallery_widget.get_selected_images()
+        if not images:
+            QMessageBox.information(self, "画像未選択", "解析対象の画像がギャラリーにありません。先に画像をインポートしてください。")
+            return
+        from solidforge.core.scene_analyzer import SCENE_ANALYZER
+        res = SCENE_ANALYZER.analyze_dataset(images)
+        self._apply_analysis_result(res, notify_user=True)
+
+    def _on_auto_tune_silent(self, images):
+        if not images or len(images) < 3:
+            return
+        from solidforge.core.scene_analyzer import SCENE_ANALYZER
+        res = SCENE_ANALYZER.analyze_dataset(images)
+        self._apply_analysis_result(res, notify_user=False)
 
     def _open_camera_select_dialog(self):
         from solidforge.ui.widgets.camera_select_dialog import CameraSelectDialog

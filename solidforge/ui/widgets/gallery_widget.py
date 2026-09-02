@@ -192,6 +192,7 @@ class GalleryWidget(QWidget):
     """
 
     count_changed = Signal(int, int)  # (selected_count, total_count)
+    batch_import_completed = Signal(list)  # (List[Path])
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -295,6 +296,7 @@ class GalleryWidget(QWidget):
         self.btn_import_folder.setEnabled(True)
         self.btn_import_files.setEnabled(True)
         self._update_status()
+        self.batch_import_completed.emit(self.get_selected_images())
 
     def _on_import_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "画像フォルダを選択 (SDカード等)")
