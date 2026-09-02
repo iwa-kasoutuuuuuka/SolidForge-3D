@@ -732,6 +732,17 @@ $$y_{\\text{distorted}} = y (1 + k_1 r^2 + k_2 r^4 + k_3 r^6) + [p_1 (r^2 + 2y^2
 $$N_{\\text{inlier}}^{\\text{adaptive}} = \\max\\left(15, \\min\\left(100, \\lfloor 100 \\cdot \\sqrt{\\eta} \\rfloor\\right)\\right)$$
 
 これにより、画面占有率 3% 前後の極小被写体（ライター、小型コネクタ、ジュエリー等）であっても、150枚以上の写真を 100% 確実にレジストレーションし、完全な全周 3D 形状を復元します。
+
+### 8.9 極小モデルの自動適応スケーリング & 原点センタリング数理モデル (Auto-Scale & Origin Centering)
+ArUco マーカーなどの実寸基準が存在しない撮影において、SfM（Structure-from-Motion）によって復元された 3D 空間は「相対カメラ基線長を基準とした無次元単位座標系」となります。このとき、被写体の外形寸法 $\\max(\\mathbf{d}) < 10.0\\text{ mm}$ である場合、3D スライサー（OrcaSlicer / Bambu Studio 等）の標準ビルドプレート（$250\\text{ mm} \\times 250\\text{ mm}$）上では肉眼で視認不可能なミクロの点として配置されてしまいます。
+
+SolidForge 3D は、以下の自動適応スケーリング変換行列 $\\mathbf{T}_{\\text{auto}}$ を算出してメッシュ頂点群 $\\mathbf{V}$ に適用します：
+
+$$s_{\\text{auto}} = \\begin{cases} \\frac{60.0}{\\max(\\mathbf{d}_{\\text{extent}})} & (\\max(\\mathbf{d}_{\\text{extent}}) < 10.0\\text{ mm} \\land \\text{scale}_{\\text{user}} = 1.0) \\\\ 1.0 & (\\text{otherwise}) \\end{cases}$$
+
+$$\\mathbf{V}_{\\text{centered}} = s_{\\text{auto}} \\cdot \\left(\\mathbf{V} - \\begin{bmatrix} \\frac{x_{\\min} + x_{\\max}}{2} \\\\ \\frac{y_{\\min} + y_{\\max}}{2} \\\\ z_{\\min} \\end{bmatrix}\\right)$$
+
+これにより、どのような相対座標系メッシュであっても、① 長辺 60mm の標準可視サイズへ自動拡大され、② 水平位置が $X=0, Y=0$ にセンタリングされ、③ 最下面がビルドプレート面 $Z=0$ にピタッと接地した状態で出力されます。
 """)
 
     # Chapter 9: Slicer Integration & Material Profiles & Post-processing
@@ -1332,6 +1343,22 @@ SolidForge 3D は、① AI 前処理の DataParallel バッチ分割、② COLMA
 <details>
 <summary><b>Q72. 生成された 3D モデル（STL）を直接 3D スライサー（OrcaSlicer / Bambu Studio / Cura）で開くには？</b></summary>
 3D 生成が完了すると、自動的に画面右側パネルの <b>「🖨️ 3Dビューア / スライサーで開く」</b> ボタンが有効化されます。これをクリックすると、PC にインストールされている OrcaSlicer / Bambu Studio / PrusaSlicer を自動検出し、ビルドプレートの中央に配置された状態で直接起動します。また「📂 出力フォルダを開く」から STL ファイルを直接ドラッグ＆ドロップすることも可能です。
+</details>
+
+<details>
+<summary><b>Q73. スライサー（OrcaSlicer / Bambu Studio）や Windows 3D ビューアで開いたとき、モデルが小さすぎて見えない・消えてしまう場合の対策は？</b></summary>
+フォトグラメトリは相対単位で復元されるため、ArUco マーカーがないとモデルが 0.88mm などのミクロサイズになり、スライサーの 250mm ビルドプレート上では見えなくなる現象が発生していました。<br>
+最新の SolidForge 3D では、<b>10mm 未満の極小モデルを自動検出し、手のひら標準サイズ（長辺 60.0mm）へ自動適応拡大（Auto-Scale）</b> して出力する機能を搭載したため、どのような写真からでもビューアやスライサーで画面いっぱいにしっかりと表示されます。
+</details>
+
+<details>
+<summary><b>Q74. 被写体の底面が Z=0（ビルドプレート面）に接地しない・斜めに浮いてしまう場合の自動補正は？</b></summary>
+SolidForge 3D の後処理エンジンは、メッシュのバウンディングボックス最下面を自動で $Z = 0.0\text{ mm}$ に接地させ、さらに重心を水平中央（$X = 0, Y = 0$）にアライメントします。また「RANSAC 接地面自動検出 & 底面フラットカット」が有効な場合は、机の面を検出して水平にスライスするため、100% 平坦な密着底面が自動成形されます。
+</details>
+
+<details>
+<summary><b>Q75. 180枚の写真から何分程度で 3D モデル（STL）が生成されますか？</b></summary>
+GeForce RTX 5080（単体）を使用した場合、AI 前処理（ブレ復元・AI 背景マスク生成）から SiftGPU 特徴抽出、SfM マッピング、OpenMVS 点群高密度化、水密化 STL 出力までの全工程が<b>約 1 分 06 秒〜1 分 20 秒程度</b>で完了します。Multi-GPU（Dual RTX 5080 等）環境では約 36 秒に短縮されます。
 </details>
 
 ---
