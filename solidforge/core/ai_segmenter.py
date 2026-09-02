@@ -91,35 +91,46 @@ class AISegmenter:
         masks_dir: Path,
         margin_pixels: int = 5,
         progress_cb: Optional[Callable[[int, str], None]] = None,
+        max_workers: Optional[int] = None,
     ) -> List[Path]:
         """
-        画像リストを一括処理し、COLMAP用マスク (<name>.png) および OpenMVS用マスク (<name>.mask.png) を生成
+        画像リストをマルチスレッド並列処理し、COLMAP用マスク (<name>.png) および OpenMVS用マスク (<name>.mask.png) を高速生成
         """
+        import shutil
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         masks_dir.mkdir(parents=True, exist_ok=True)
         generated_masks: List[Path] = []
         total = len(image_paths)
+        if total == 0:
+            return []
 
-        for idx, img_path in enumerate(image_paths):
-            # COLMAP 用命名規則: <image_name>.png (例: 0001.jpg.png)
+        workers = max_workers or min(8, os.cpu_count() or 4)
+
+        def _process_single(item: Tuple[int, Path]) -> Tuple[int, Path, bool]:
+            idx, img_path = item
             colmap_mask_path = masks_dir / f"{img_path.name}.png"
-            
-            # マスク生成
             success = self.generate_mask(img_path, colmap_mask_path, margin_pixels=margin_pixels)
             if success:
-                generated_masks.append(colmap_mask_path)
-                
-                # OpenMVS 用にも同マスクを複製 (<image_name>.mask.png)
                 openmvs_mask_path = masks_dir / f"{img_path.stem}.mask.png"
                 if not openmvs_mask_path.exists():
                     try:
-                        import shutil
                         shutil.copyfile(str(colmap_mask_path), str(openmvs_mask_path))
                     except Exception:
                         pass
+            return idx, colmap_mask_path, success
 
-            if progress_cb and total > 0:
-                pct = int((idx + 1) / total * 100)
-                progress_cb(pct, f"AI 背景マスク生成中 ({idx + 1}/{total}): {img_path.name}")
+        completed_count = 0
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(_process_single, (idx, img_p)) for idx, img_p in enumerate(image_paths)]
+            for future in as_completed(futures):
+                idx, colmap_mask_path, success = future.result()
+                completed_count += 1
+                if success:
+                    generated_masks.append(colmap_mask_path)
+                if progress_cb and total > 0:
+                    pct = int(completed_count / total * 100)
+                    progress_cb(pct, f"AI 背景マスク並列生成中 ({completed_count}/{total}) [{workers} Threads]...")
 
         return generated_masks
 

@@ -113,21 +113,37 @@ class AIEnhancer:
         output_dir.mkdir(parents=True, exist_ok=True)
         enhanced_paths: List[Path] = []
         total = len(image_paths)
+        if total == 0:
+            return []
 
-        # 1. 有効画像の読み込み
-        valid_indices = []
-        raw_images = []
-        for i, src_path in enumerate(image_paths):
+        import os
+        from concurrent.futures import ThreadPoolExecutor
+
+        workers = min(8, os.cpu_count() or 4)
+
+        # 1. 有効画像のマルチスレッド並列読み込み (高速NVMe最適化)
+        def _read_image(item: Tuple[int, Path]) -> Tuple[int, Path, Optional[np.ndarray]]:
+            idx, src_path = item
             if src_path.exists() and src_path.is_file() and src_path.stat().st_size > 0:
                 try:
                     buf = np.fromfile(str(src_path), dtype=np.uint8)
                     if len(buf) > 0:
                         img = cv2.imdecode(buf, cv2.IMREAD_COLOR)
                         if img is not None:
-                            raw_images.append(img)
-                            valid_indices.append((i, src_path))
+                            return idx, src_path, img
                 except Exception:
                     pass
+            return idx, src_path, None
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            read_results = list(executor.map(_read_image, enumerate(image_paths)))
+
+        valid_items = [(idx, src_p, img) for idx, src_p, img in read_results if img is not None]
+        valid_indices = [(idx, src_p) for idx, src_p, img in valid_items]
+        raw_images = [img for idx, src_p, img in valid_items]
+
+        if not raw_images:
+            return []
 
         # 2. RTX 5080 GPU FP16 並列バッチ処理
         from solidforge.core.gpu_accelerator import GPU_ACCELERATOR
@@ -139,17 +155,28 @@ class AIEnhancer:
         )
         elapsed_total = (time.perf_counter() - t0) * 1000.0
 
-        # 3. ディスクへの保存
-        for (idx, src_path), enhanced_img in zip(valid_indices, enhanced_imgs):
+        # 3. ディスクへのマルチスレッド並列書き込み (高速NVMe最適化)
+        def _write_enhanced_image(item: Tuple[Tuple[int, Path], np.ndarray]) -> Optional[Path]:
+            (idx, src_path), enhanced_img = item
             dest_path = output_dir / f"ai_{src_path.name}"
             is_success, encoded_img = cv2.imencode(".jpg", enhanced_img, [cv2.IMWRITE_JPEG_QUALITY, 99])
             if is_success:
-                with open(dest_path, "wb") as f:
-                    f.write(encoded_img)
-                enhanced_paths.append(dest_path)
+                try:
+                    with open(dest_path, "wb") as f:
+                        f.write(encoded_img)
+                    return dest_path
+                except Exception:
+                    pass
+            return None
 
-            if progress_callback:
-                progress_callback(len(enhanced_paths), total, elapsed_total / max(len(raw_images), 1))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            write_items = list(zip(valid_indices, enhanced_imgs))
+            write_results = list(executor.map(_write_enhanced_image, write_items))
+
+        enhanced_paths = [p for p in write_results if p is not None]
+
+        if progress_callback:
+            progress_callback(len(enhanced_paths), total, elapsed_total / max(len(raw_images), 1))
 
         return enhanced_paths
 
