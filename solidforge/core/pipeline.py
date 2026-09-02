@@ -314,8 +314,8 @@ class ReconstructionPipeline(QObject):
             cmd_refine = [
                 refine_exe,
                 "-w", str(dense_dir),
-                "-i", "scene_dense_mesh.ply",
-                "-m", "scene_dense.mvs",
+                "-i", "scene_dense.mvs",
+                "-m", "scene_dense_mesh.ply",
                 "-o", "scene_refined_mesh.ply",
                 "--resolution-level", str(prec.dense_resolution_level),
                 "--scales", "2",
