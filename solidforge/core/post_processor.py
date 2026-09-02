@@ -198,9 +198,21 @@ class MeshPostProcessor:
 
         from solidforge.core.geometry_prep import GEOMETRY_PREP
 
-        # 1. スケール適用
+        # 1. スケール適用 (ArUco未検出時で単位座標系 < 10mm の場合は長辺60mm標準サイズへ自動適応スケーリング)
         if abs(applied_scale - 1.0) > 1e-4:
             mesh.apply_scale(applied_scale)
+        else:
+            max_ext = float(max(mesh.extents)) if len(mesh.vertices) > 0 else 1.0
+            if max_ext < 10.0 and max_ext > 1e-4:
+                auto_s = 60.0 / max_ext
+                mesh.apply_scale(auto_s)
+                applied_scale = auto_s
+
+        # 原点センタリング & Z=0 接地アライメント (ビルドプレート中央配置)
+        if len(mesh.vertices) > 0:
+            mesh.vertices[:, 0] -= (mesh.bounds[0, 0] + mesh.bounds[1, 0]) / 2.0
+            mesh.vertices[:, 1] -= (mesh.bounds[0, 1] + mesh.bounds[1, 1]) / 2.0
+            mesh.vertices[:, 2] -= mesh.bounds[0, 2]
 
         # 2. 接地面 RANSAC 自動検出 & 底面フラットカット (Build Plate 接地化)
         if self.config.direct_to_print.enable_ground_cut:
