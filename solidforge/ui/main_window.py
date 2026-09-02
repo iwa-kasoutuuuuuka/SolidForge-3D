@@ -250,6 +250,35 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(ai_group)
 
+        # 1.5 復元精度 & クオリティ設定 (Precision)
+        prec_group = QGroupBox("💎 復元精度 & クオリティ (Precision)")
+        prec_layout = QFormLayout(prec_group)
+        prec_layout.setSpacing(8)
+
+        self.combo_precision = QComboBox()
+        self.combo_precision.addItems([
+            "💎 極限高精度 (Ultra-Precision) [推奨]",
+            "🚀 高速・標準 (Fast / Balanced)",
+            "🔬 ミクロ・工業極致 (Extreme Micro 4K)",
+        ])
+        self.combo_precision.setToolTip(
+            "極限高精度: SIFT 16k特徴点 + エピポーラ幾何ガイドマッチング + OpenMVS RefineMesh 光度最適化により、細部までシャープに復元します。"
+        )
+        self.combo_precision.currentIndexChanged.connect(self._on_precision_changed)
+        prec_layout.addRow("精度モード:", self.combo_precision)
+
+        self.chk_refine_mesh = QCheckBox("OpenMVS RefineMesh (光度表面最適化)")
+        self.chk_refine_mesh.setChecked(self.config.precision.enable_refine_mesh)
+        self.chk_refine_mesh.setToolTip("メッシュ頂点を写真のピクセル明暗に合わせて最適化し、曲面を滑らかに、エッジをシャープにします。")
+        prec_layout.addRow("表面リファイン:", self.chk_refine_mesh)
+
+        self.chk_guided_matching = QCheckBox("エピポーラ幾何ガイドマッチング")
+        self.chk_guided_matching.setChecked(self.config.precision.enable_guided_matching)
+        self.chk_guided_matching.setToolTip("カメラ幾何情報を用いて一致する特徴点数を大幅に増やし、幾何形状の欠落を防ぎます。")
+        prec_layout.addRow("幾何ガイド照合:", self.chk_guided_matching)
+
+        layout.addWidget(prec_group)
+
         # 2. Quality Gate 設定グループ
         qg_group = QGroupBox("🔍 Quality Gate (品質判定) 設定")
         qg_layout = QFormLayout(qg_group)
@@ -377,6 +406,26 @@ class MainWindow(QMainWindow):
         QUALITY_GATE.config.min_feature_count = val
         self.gallery_widget.update_thresholds(QUALITY_GATE.config.blur_threshold, val)
 
+    def _on_precision_changed(self, index: int):
+        if index == 0:  # Ultra-Precision
+            self.config.precision.mode = "ULTRA_HIGH"
+            self.config.precision.sift_peak_threshold = 0.002
+            self.config.precision.sift_max_features = 16384
+            self.config.precision.dense_resolution_level = 1
+            self.config.precision.dense_min_views = 4
+        elif index == 1:  # Fast / Balanced
+            self.config.precision.mode = "BALANCED"
+            self.config.precision.sift_peak_threshold = 0.006
+            self.config.precision.sift_max_features = 8192
+            self.config.precision.dense_resolution_level = 2
+            self.config.precision.dense_min_views = 3
+        elif index == 2:  # Extreme Micro
+            self.config.precision.mode = "EXTREME_CAD"
+            self.config.precision.sift_peak_threshold = 0.001
+            self.config.precision.sift_max_features = 32768
+            self.config.precision.dense_resolution_level = 0
+            self.config.precision.dense_min_views = 6
+
     def _on_photo_captured_from_camera(self, file_path_str: str, eval_res):
         p = Path(file_path_str)
         self.gallery_widget.add_image(p, eval_res)
@@ -454,6 +503,9 @@ class MainWindow(QMainWindow):
         self.config.ai_enhancement.enable_ai_background_removal = self.chk_bg_removal.isChecked()
         self.config.ai_enhancement.sharpen_strength = float(self.slider_ai_sharpen.value()) / 100.0
         
+        self.config.precision.enable_refine_mesh = self.chk_refine_mesh.isChecked()
+        self.config.precision.enable_guided_matching = self.chk_guided_matching.isChecked()
+
         self.config.post_process.aruco_marker_size_mm = self.spin_aruco_size.value()
         self.config.post_process.direct_to_print.enable_ground_cut = self.chk_ground_cut.isChecked()
         self.config.post_process.direct_to_print.enable_hollowing = self.chk_hollowing.isChecked()

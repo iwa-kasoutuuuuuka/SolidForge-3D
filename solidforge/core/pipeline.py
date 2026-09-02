@@ -189,11 +189,12 @@ class ReconstructionPipeline(QObject):
         dense_dir.mkdir(exist_ok=True)
 
         hw = self.config.hardware
+        prec = self.config.precision
 
-        # Stage 1: 特徴量抽出 (SiftGPU / Multi-GPU)
+        # Stage 1: 特徴量抽出 (SiftGPU / Multi-GPU / サブピクセル高精度)
         gpu_indices_str = self.config.multi_gpu.get_colmap_gpu_index_str()
-        self.progress_updated.emit(15, f"SiftGPU 特徴量抽出中 (GPU: {gpu_indices_str})...")
-        self.log_emitted.emit(f"[COLMAP] SiftGPU 特徴点抽出を実行中 (GPU Index: {gpu_indices_str}, Max Size: 4096)...")
+        self.progress_updated.emit(15, f"SiftGPU 特徴量抽出中 (GPU: {gpu_indices_str}, Peak: {prec.sift_peak_threshold})...")
+        self.log_emitted.emit(f"[COLMAP] SiftGPU 特徴点抽出を実行中 (GPU Index: {gpu_indices_str}, Max Size: 4096, Features: {prec.sift_max_features}, Peak: {prec.sift_peak_threshold})...")
         cmd_extract = [
             self.config.colmap_binary, "feature_extractor",
             "--database_path", str(database_path),
@@ -203,7 +204,9 @@ class ReconstructionPipeline(QObject):
             "--SiftExtraction.use_gpu", "1" if hw.colmap_use_gpu else "0",
             "--SiftExtraction.gpu_index", gpu_indices_str,
             "--SiftExtraction.max_image_size", "4096",
-            "--SiftExtraction.peak_threshold", "0.006",
+            "--SiftExtraction.max_num_features", str(prec.sift_max_features),
+            "--SiftExtraction.peak_threshold", str(prec.sift_peak_threshold),
+            "--SiftExtraction.first_octave", "-1",
         ]
         if masks_dir and masks_dir.exists():
             cmd_extract.extend(["--ImageReader.mask_path", str(masks_dir)])
@@ -211,19 +214,20 @@ class ReconstructionPipeline(QObject):
 
         self._exec_cmd(cmd_extract)
 
-        # Stage 2: 特徴量マッチング (Exhaustive Matcher / Multi-GPU CUDA)
+        # Stage 2: 特徴量マッチング (Exhaustive Matcher / Guided Matching / Multi-GPU CUDA)
         self.progress_updated.emit(30, f"CUDA 並列特徴点マッチング中 (GPU: {gpu_indices_str})...")
-        self.log_emitted.emit(f"[COLMAP] CUDA Exhaustive Feature Matching 実行中 (GPU: {gpu_indices_str})...")
+        self.log_emitted.emit(f"[COLMAP] CUDA Exhaustive Feature Matching 実行中 (GPU: {gpu_indices_str}, Guided: {prec.enable_guided_matching})...")
         cmd_match = [
             self.config.colmap_binary, "exhaustive_matcher",
             "--database_path", str(database_path),
             "--SiftMatching.use_gpu", "1" if hw.colmap_use_gpu else "0",
             "--SiftMatching.gpu_index", gpu_indices_str,
+            "--SiftMatching.guided_matching", "1" if prec.enable_guided_matching else "0",
         ]
         self._exec_cmd(cmd_match)
 
-        # Stage 3: 疎な点群再構築 (Incremental Mapper / SfM)
-        self.progress_updated.emit(45, "SfM 疎な点群再構築 (Camera Pose Estimation)...")
+        # Stage 3: 疎な点群再構築 (Incremental Mapper / SfM / Bundle Adjustment 最適化)
+        self.progress_updated.emit(45, "SfM 疎な点群再構築 (Camera Pose Estimation & BA Refinement)...")
         self.log_emitted.emit("[COLMAP] Incremental SfM Mapper 実行中...")
         cmd_map = [
             self.config.colmap_binary, "mapper",
@@ -235,6 +239,9 @@ class ReconstructionPipeline(QObject):
             "--Mapper.abs_pose_min_num_inliers", "10",
             "--Mapper.min_num_matches", "10",
             "--Mapper.filter_min_tri_angle", "1.5",
+            "--Mapper.ba_refine_focal_length", "1",
+            "--Mapper.ba_refine_principal_point", "1",
+            "--Mapper.ba_refine_extra_params", "1",
         ]
         self._exec_cmd(cmd_map)
 
@@ -261,7 +268,7 @@ class ReconstructionPipeline(QObject):
         self._exec_cmd(cmd_undistort)
 
         # Stage 5: OpenMVS 密度再構築 (Dense Point Cloud)
-        self.progress_updated.emit(70, "OpenMVS 高密度点群生成中 (DensifyPointCloud)...")
+        self.progress_updated.emit(70, f"OpenMVS 高密度点群生成中 (DensifyPointCloud, Level {prec.dense_resolution_level})...")
         cmd_mvs_import = [
             os.path.join(self.config.openmvs_dir, "InterfaceCOLMAP.exe" if os.name == 'nt' else "InterfaceCOLMAP"),
             "-w", str(dense_dir),
@@ -275,6 +282,8 @@ class ReconstructionPipeline(QObject):
             "-w", str(dense_dir),
             "-i", "scene.mvs",
             "-o", "scene_dense.mvs",
+            "--resolution-level", str(prec.dense_resolution_level),
+            "--number-views", str(prec.dense_min_views),
             "--max-threads", str(hw.openmvs_cuda_threads or 0),
         ]
         try:
@@ -291,12 +300,37 @@ class ReconstructionPipeline(QObject):
             "-w", str(dense_dir),
             "-i", input_mvs,
             "-o", "scene_dense_mesh.ply",
+            "--thickness-factor", "1.0",
         ]
         self._exec_cmd(cmd_mesh, cwd=str(dense_dir))
 
+        raw_ply_path = dense_dir / "scene_dense_mesh.ply"
+
+        # Stage 6.5: 極限高精度 光度メッシュリファインメント (RefineMesh)
+        refine_exe = os.path.join(self.config.openmvs_dir, "RefineMesh.exe" if os.name == 'nt' else "RefineMesh")
+        if prec.enable_refine_mesh and os.path.exists(refine_exe) and dense_scene_file.exists() and raw_ply_path.exists():
+            self.progress_updated.emit(88, "極限高精度 光度メッシュリファイン中 (RefineMesh)...")
+            self.log_emitted.emit("[OpenMVS] 頂点単位の光度最適化 (RefineMesh) を実行中...")
+            cmd_refine = [
+                refine_exe,
+                "-w", str(dense_dir),
+                "-i", "scene_dense_mesh.ply",
+                "-m", "scene_dense.mvs",
+                "-o", "scene_refined_mesh.ply",
+                "--resolution-level", str(prec.dense_resolution_level),
+                "--scales", "2",
+            ]
+            try:
+                self._exec_cmd(cmd_refine, cwd=str(dense_dir))
+                refined_file = dense_dir / "scene_refined_mesh.ply"
+                if refined_file.exists() and refined_file.stat().st_size > 0:
+                    raw_ply_path = refined_file
+                    self.log_emitted.emit("[OpenMVS] ✨ RefineMesh 光度最適化メッシュの適用に成功しました。")
+            except Exception as e:
+                self.log_emitted.emit(f"[OpenMVS 警告] RefineMesh スキップ (通常メッシュを使用): {e}")
+
         # Stage 7: 後処理 (Watertight化 & ArUcoスケール校正 & エクスポート)
         self.progress_updated.emit(92, "ArUcoスケール校正 & 水密化 (Watertight)...")
-        raw_ply_path = dense_dir / "scene_dense_mesh.ply"
         if not raw_ply_path.exists():
             ply_candidates = list(dense_dir.glob("*.ply"))
             if ply_candidates:

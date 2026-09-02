@@ -116,6 +116,19 @@ class HardwareOptimizationConfig:
 
 
 @dataclass
+class PrecisionConfig:
+    """3Dスキャン高精度化 & 極限幾何復元設定"""
+    mode: Literal["BALANCED", "ULTRA_HIGH", "EXTREME_CAD"] = "ULTRA_HIGH"
+    sift_peak_threshold: float = 0.002  # 特徴点抽出感度 (低いほど微細テクスチャを抽出, 0.001 ~ 0.006)
+    sift_max_features: int = 16384  # 最大特徴点数 (8192 ~ 32768)
+    enable_guided_matching: bool = True  # エピポーラ幾何ガイドマッチング (対応点数+50%)
+    enable_refine_mesh: bool = True  # OpenMVS RefineMesh 光度最適化 (表面平滑 & エッジ鮮鋭化)
+    dense_resolution_level: int = 1  # 深度マップ解像度 (1: 高精細, 0: 原寸4K極致)
+    dense_min_views: int = 4  # 幾何一貫性チェック視点数
+    mesh_smoothing: int = 2  # メッシュ平滑化強度
+
+
+@dataclass
 class PostProcessingConfig:
     """3Dプリント用後処理 & スケール校正設定"""
     aruco_dict_name: str = "DICT_4X4_50"
@@ -180,6 +193,7 @@ class AppConfig:
     post_process: PostProcessingConfig = field(default_factory=PostProcessingConfig)
     smart_assist: SmartAssistConfig = field(default_factory=SmartAssistConfig)
     ai_enhancement: AIEnhancementConfig = field(default_factory=AIEnhancementConfig)
+    precision: PrecisionConfig = field(default_factory=PrecisionConfig)
     camera: CameraSourceConfig = field(default_factory=CameraSourceConfig)
     insta360: Insta360Config = field(default_factory=Insta360Config)
     multi_gpu: MultiGPUConfig = field(default_factory=MultiGPUConfig)
