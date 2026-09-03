@@ -54,6 +54,10 @@
    - [5.9 UIカスタマイズとサイバーインダストリアルテーマ](#59-uiカスタマイズとサイバーインダストリアルテーマ)
    - [5.10 プロファイル管理機能（プリセット保存・読込）の操作手順](#510-プロファイル管理機能プリセット保存読込の操作手順)
    - [5.11 リアルタイム GPU パフォーマンスプロファイラとボトルネック診断ビュー](#511-リアルタイム-gpu-パフォーマンスプロファイラとボトルネック診断ビュー)
+   - [5.12 高性能化・並列アクセラレーション・ボトルネック解消の実装](#512-高性能化並列アクセラレーションボトルネック解消の実装)
+   - [5.13 🤖 撮影画像 AI 自動認識 & パラメータ自動適用 (Auto-Pilot / Scene Auto-Profiler)](#513--撮影画像-ai-自動認識--パラメータ自動適用-auto-pilot--scene-auto-profiler)
+   - [5.14 🎨 スタジオ内蔵 インタラクティブ 3D OpenGL ビューア (3D Viewport) 完全操作仕様](#514--スタジオ内蔵-インタラクティブ-3d-opengl-ビューア-3d-viewport-完全操作仕様)
+   - [5.15 💾 プロジェクト保存 & 復元機能 (.sforge Project Bundle)](#515--プロジェクト保存--復元機能-sforge-project-bundle)
 6. [💡 被写体別 撮影マスターステップバイステップガイド (Practical Shooting Mastery)](#6-被写体別-撮影マスターステップバイステップガイド-practical-shooting-mastery)
    - [6.1 フィギュア・キャラクター造形物・玩具](#61-フィギュアキャラクター造形物玩具)
    - [6.2 工業製品・機械部品・カスタムブラケット](#62-工業製品機械部品カスタムブラケット)
@@ -75,6 +79,10 @@
    - [7.4 10,000 候補並列ベクトル化 RANSAC 接地面検出](#74-10000-候補並列ベクトル化-ransac-接地面検出)
    - [7.5 CUDA ストリーム非同期パイプライン制御と VRAM ゼロ断片化メモリプール](#75-cuda-ストリーム非同期パイプライン制御と-vram-ゼロ断片化メモリプール)
    - [7.6 NVIDIA TensorRT 実行エンジンと FP8 / INT8 最適化ロードマップ](#76-nvidia-tensorrt-実行エンジンと-fp8--int8-最適化ロードマップ)
+   - [7.7 U2Net AI 前景セグメンテーションと被写体完全分離アーキテクチャ](#77-u2net-ai-前景セグメンテーションと被写体完全分離アーキテクチャ)
+   - [7.8 💎 OpenMVS RefineMesh 頂点単位の光度最適化とエピポーラ幾何ガイドマッチング](#78--openmvs-refinemesh-頂点単位の光度最適化とエピポーラ幾何ガイドマッチング)
+   - [7.9 🤖 撮影画像 AI 自動認識 & 最適パラメータ導出エンジン (Auto-Pilot)](#79--撮影画像-ai-自動認識--最適パラメータ導出エンジン-auto-pilot--scene-auto-profiler)
+   - [7.10 🌈 フルカラーテクスチャベイキング & 適応型マッチャー (Adaptive Matcher)](#710--フルカラーテクスチャベイキング-openmvs-texturemesh--適応型マッチャー-adaptive-matcher)
 8. [🔬 アルゴリズムと数理的背景 (Algorithms & Mathematical Formulations)](#8-アルゴリズムと数理的背景-algorithms--mathematical-formulations)
    - [8.1 Structure-from-Motion (SfM: COLMAP)](#81-structure-from-motion-sfm-colmap)
    - [8.2 Multi-View Stereo & Surface Reconstruction (MVS: OpenMVS)](#82-multi-view-stereo--surface-reconstruction-mvs-openmvs)
@@ -83,6 +91,11 @@
    - [8.5 SLA (光造形) 向け中空化 (Hollowing) & レジン排出穴 (Drain Holes)](#85-sla-光造形-向け中空化-hollowing--レジン排出穴-drain-holes)
    - [8.6 完全水密化 (Watertight Guarantee) & 非多様体自動修復](#86-完全水密化-watertight-guarantee--非多様体自動修復)
    - [8.7 Brown-Conrady レンズ歪みモデル & エピポーラ幾何](#87-brown-conrady-レンズ歪みモデル--エピポーラ幾何)
+   - [8.8 小型被写体向け適応型 SfM 疎点群マッピング数理モデル](#88-小型被写体向け適応型-sfm-疎点群マッピング数理モデル-adaptive-inlier-thresholding)
+   - [8.9 極小モデルの自動適応スケーリング & 原点センタリング数理モデル](#89-極小モデルの自動適応スケーリング--原点センタリング数理モデル-auto-scale--origin-centering)
+   - [8.10 3Dプリント造形性診断: オーバーハング傾斜角判定幾何学](#810-3dプリント造形性診断の幾何学-オーバーハング傾斜角判定式-overhang-slope-analysis)
+   - [8.11 Quadric Error Metrics (QEM) による適応型メッシュデシメーション数理](#811-quadric-error-metrics-qem-による適応型メッシュデシメーション数理-adaptive-mesh-decimation)
+   - [8.12 転倒防止面取り台座合成 & Z=0 アライメント数理モデル](#812-転倒防止面取り台座合成--z0-アライメント数理モデル-anti-toppling-base-pedestal-synthesis)
 9. [🖨️ 主要 3D スライサー別 最適化 & 印刷パラメータ完全ガイド (Slicer Integration Guides)](#9-主要-3d-スライサー別-最適化--印刷パラメータ完全ガイド-slicer-integration-guides)
    - [9.1 OrcaSlicer (ワンクリック自動起動・自動中央配置)](#91-orcaslicer-ワンクリック自動起動自動中央配置)
    - [9.2 Bambu Studio (Bambu Lab X1-Carbon / P1S / A1)](#92-bambu-studio)
@@ -793,7 +806,36 @@ $$s_{\text{auto}} = \begin{cases} \frac{60.0}{\max(\mathbf{d}_{\text{extent}})} 
 
 $$\mathbf{V}_{\text{centered}} = s_{\text{auto}} \cdot \left(\mathbf{V} - \begin{bmatrix} \frac{x_{\min} + x_{\max}}{2} \\ \frac{y_{\min} + y_{\max}}{2} \\ z_{\min} \end{bmatrix}\right)$$
 
-これにより、どのような相対座標系メッシュであっても、① 長辺 60mm の標準可視サイズへ自動拡大され、② 水平位置が $X=0, Y=0$ にセンタリングされ、③ 最下面がビルドプレート面 $Z=0$ にピタッと接地した状態で出力されます。
+これによって、どのような相対座標系メッシュであっても、① 長辺 60mm の標準可視サイズへ自動拡大され、② 水平位置が $X=0, Y=0$ にセンタリングされ、③ 最下面がビルドプレート面 $Z=0$ にピタッと接地した状態で出力されます。
+
+### 8.10 3Dプリント造形性診断の幾何学: オーバーハング傾斜角判定式 (Overhang Slope Analysis)
+FDM（熱溶解積層）3D プリンタにおいて、空中にせり出す角度が水平から 45° を超える面は溶融フィラメントが垂れ下がり、サポート材なしでは造形失敗となります。SolidForge 3D は、メッシュの各ポリゴン面 $f_i$ の単位外向き法線ベクトル $\mathbf{n}_i = (n_{ix}, n_{iy}, n_{iz})$ と重力下向きベクトル $\mathbf{g} = (0, 0, -1)$ から、以下の幾何学的判定を行います：
+
+$$\theta_i = \arccos\left(\text{clip}\left(-\mathbf{n}_i \cdot \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}, -1.0, 1.0\right)\right)$$
+
+水平面からの傾斜角が閾値 $\theta_{\text{thresh}} = 45^\circ$（法線 Z 成分 $n_{iz} < -\sin(45^\circ) \approx -0.7071$）を満たす面をオーバーハング面集合 $\mathcal{F}_{\text{overhang}}$ と定義し、総表面積に対する急傾斜面積比率 $R_{\text{overhang}}$ を算出します：
+
+$$R_{\text{overhang}} = \frac{\sum_{f \in \mathcal{F}_{\text{overhang}}} \text{Area}(f)}{\sum_{f \in \mathcal{F}} \text{Area}(f)} \times 100\%$$
+
+$R_{\text{overhang}} > 15\%$ の場合、スライサー投入時に「⚠️ 要サポート材」警告を自動発行し、スタジオ内蔵 3D ビューア上で該当面を赤橙色でリアルタイム可視化します。
+
+### 8.11 Quadric Error Metrics (QEM) による適応型メッシュデシメーション数理 (Adaptive Mesh Decimation)
+高密度点群から生成された数十万面のメッシュは、スライサーの演算負荷やメモリを圧迫します。SolidForge 3D は、Garland & Heckbert の二次誤差測度（Quadric Error Metrics: QEM）に基づくエッジ縮退（Edge Collapse）アルゴリズムを採用しています。
+
+各頂点 $\mathbf{v}$ に対し、接するポリゴン平面 $\mathbf{p} = [a, b, c, d]^T$ ($a^2 + b^2 + c^2 = 1$) の距離の二乗和を表す対称行列 $\mathbf{Q}$ を定義します：
+
+$$\mathbf{Q} = \sum_{\mathbf{p} \in \text{planes}(\mathbf{v})} \mathbf{p} \mathbf{p}^T = \sum \begin{bmatrix} a^2 & ab & ac & ad \\ ab & b^2 & bc & bd \\ ac & bc & c^2 & cd \\ ad & bd & cd & d^2 \end{bmatrix}$$
+
+エッジ $(\mathbf{v}_1, \mathbf{v}_2)$ を統合頂点 $\bar{\mathbf{v}}$ へ縮退する際の幾何誤差 $\Delta(\bar{\mathbf{v}})$ は以下で与えられます：
+
+$$\Delta(\bar{\mathbf{v}}) = \bar{\mathbf{v}}^T (\mathbf{Q}_1 + \mathbf{Q}_2) \bar{\mathbf{v}}$$
+
+誤差が最小となる頂点対を優先度付きキューで順次マージすることで、平面の平滑さと鋭利なエッジ（稜線）のシャープネスを 100% 保持したまま、ポリゴン面数を 50%（または指定面数）へ超高速に軽量化します。
+
+### 8.12 転倒防止面取り台座合成 & Z=0 アライメント数理モデル (Anti-Toppling Base Pedestal Synthesis)
+接地面積が狭く自立困難なモデルに対し、底面外形に最適フィットする楕円シリンダー台座（厚さ $h_{\text{base}} = 2.5\text{ mm}$、張り出しマージン $\delta_{\text{margin}} = 5.0\text{ mm}$）を数理的に合成します。
+
+メッシュの外形バウンディングボックス $\Delta x = x_{\max} - x_{\min}, \Delta y = y_{\max} - y_{\min}$ から台座半径 $r_{\text{base}} = \max\left(\frac{\Delta x}{2}, \frac{\Delta y}{2}\right) + \delta_{\text{margin}}$ を決定し、最下面 $z_{\min}$ 直下に円柱を生成・ブーリアン結合した後、全頂点を $\mathbf{V}' = \mathbf{V} - [0, 0, \min(z)]^T$ によりビルドプレート面 $Z=0$ に完全接地させます。
 
 
 ---
@@ -1434,6 +1476,25 @@ SD カードやフォルダから写真をギャラリーに読み込むだけ�
 画面右下の「💾 プロジェクト保存」ボタンを押すと、撮影写真、パラメータ設定、生成された 3D モデル、診断結果が単一の <code>.sforge</code> パッケージとして保存されます。<br>
 ナビゲーションバーの「📂 プロジェクトを開く (.sforge)」からいつでも過去の作業状態を完全に復元できます。
 </details>
+
+<details>
+<summary><b>Q81. フルカラーテクスチャ付きモデル (OBJ + MTL + テクスチャ画像) を書き出すにはどうすればよいですか？</b></summary>
+画面右側の設定パネルで「出力形式」を <code>OBJ</code> または <code>GLTF</code> に設定して 3D 生成を実行してください。<br>
+パイプラインが自動的に OpenMVS <code>TextureMesh.exe</code> を呼び出し、撮影した高解像度写真の色彩を UV マップ（<code>solidforge_model_material_00_map_Kd.jpg</code>）としてメッシュ表面に焼き込みます。Bambu Studio 等にドラッグ＆ドロップすると、フルカラーの状態で即座に読み込まれます。
+</details>
+
+<details>
+<summary><b>Q82. 写真枚数が 100 枚や 200 枚を超えると、マッチング処理が遅くなりませんか？</b></summary>
+ご安心ください。SolidForge 3D は「適応型マッチャー（Adaptive Matcher）」を標準搭載しています。<br>
+写真が 80 枚以下の場合は精度最優先の <code>exhaustive_matcher</code>（総当たり照合）を行い、80 枚を超える大規模データセットでは自動的に <code>sequential_matcher</code>（オーバーラップ 20 枚、2次隣接、ループ検知付き）へ切り替わります。これにより、マッチング計算時間を従来の 1/10 以下（数十秒〜1分）に短縮しながら、高精度な点群再構築を実現します。
+</details>
+
+<details>
+<summary><b>Q83. 3D ビューアでオーバーハング警告（赤橙色）が出た場合、どのように対処すべきですか？</b></summary>
+赤橙色で表示された面は、FDM 方式の 3D プリンタで下向き 45 度以上の急傾斜となっており、樹脂が自重で垂れ落ちるリスクがある領域です。<br>
+OrcaSlicer や Bambu Studio、PrusaSlicer などのスライサー側で「サポート材（Support Structures）」を有効（「ノーマル」または「ツリーサポート（Tree Support）」）にしてスライス・造形を行ってください。また、底面が不安定な場合はスタジオの「🧱 転倒防止台座を付加」ボタンを押すことで、安定したベースプレートをワンタッチで合成できます。
+</details>
+
 
 
 ---
