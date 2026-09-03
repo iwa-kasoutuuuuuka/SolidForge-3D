@@ -196,7 +196,7 @@ class SceneAnalyzer:
         )
 
         return SceneAnalysisResult(
-            sample_count=len(sample_paths),
+            sample_count=len(sharpness_list),
             object_coverage_pct=avg_cov,
             category=category,
             category_label_ja=cat_label,

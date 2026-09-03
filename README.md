@@ -12,7 +12,7 @@
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
 [![OrcaSlicer Ready](https://img.shields.io/badge/Slicer-OrcaSlicer%20%2F%20Bambu%20Studio-00e5ff?style=for-the-badge)](https://github.com/SoftFever/OrcaSlicer)
 [![Direct to Print](https://img.shields.io/badge/3D%20Print-Vectorized%20RANSAC-ffd600?style=for-the-badge)](https://en.wikipedia.org/wiki/STL_(file_format))
-[![Tests](https://img.shields.io/badge/Unit%20Tests-45%2F45%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-46%2F46%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
 [![Security Hardened](https://img.shields.io/badge/Security-CWE%20Audited-blue?style=for-the-badge)](https://cwe.mitre.org/)
 
 ---

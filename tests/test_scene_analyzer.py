@@ -55,6 +55,16 @@ class TestSceneAnalyzer(unittest.TestCase):
         self.assertLessEqual(res.rec_sift_peak_threshold, 0.006)
         self.assertIsNotNone(res.summary_text_ja)
 
+    def test_edge_cases_corrupt_and_grayscale(self):
+        corrupt = self.test_dir / "corrupt.jpg"
+        corrupt.write_bytes(b"broken file header")
+        gray = self.test_dir / "gray.jpg"
+        cv2.imwrite(str(gray), np.zeros((80, 80), dtype=np.uint8))
+
+        res = SCENE_ANALYZER.analyze_dataset([corrupt, gray])
+        self.assertIsInstance(res, SceneAnalysisResult)
+        self.assertIsNotNone(res.rec_precision_mode)
+
 
 if __name__ == "__main__":
     unittest.main()
