@@ -214,16 +214,31 @@ class ReconstructionPipeline(QObject):
 
         self._exec_cmd(cmd_extract)
 
-        # Stage 2: 特徴量マッチング (Exhaustive Matcher / Guided Matching / Multi-GPU CUDA)
+        # Stage 2: 特徴量マッチング (適応型 Matcher: 80枚超でSequential, 80枚以下でExhaustive)
         self.progress_updated.emit(30, f"CUDA 並列特徴点マッチング中 (GPU: {gpu_indices_str})...")
-        self.log_emitted.emit(f"[COLMAP] CUDA Exhaustive Feature Matching 実行中 (GPU: {gpu_indices_str}, Guided: {prec.enable_guided_matching})...")
-        cmd_match = [
-            self.config.colmap_binary, "exhaustive_matcher",
-            "--database_path", str(database_path),
-            "--SiftMatching.use_gpu", "1" if hw.colmap_use_gpu else "0",
-            "--SiftMatching.gpu_index", gpu_indices_str,
-            "--SiftMatching.guided_matching", "1" if prec.enable_guided_matching else "0",
-        ]
+        if len(valid_images) > 80:
+            matcher_type = "sequential_matcher"
+            self.log_emitted.emit(f"[COLMAP] 画像数 {len(valid_images)} 枚検出: 高速 Sequential Matcher (ループ検知付き, GPU: {gpu_indices_str}) を適用")
+            cmd_match = [
+                self.config.colmap_binary, matcher_type,
+                "--database_path", str(database_path),
+                "--SiftMatching.use_gpu", "1" if hw.colmap_use_gpu else "0",
+                "--SiftMatching.gpu_index", gpu_indices_str,
+                "--SiftMatching.guided_matching", "1" if prec.enable_guided_matching else "0",
+                "--SequentialMatching.overlap", "20",
+                "--SequentialMatching.quadratic_overlap", "1",
+                "--SequentialMatching.loop_detection", "1",
+            ]
+        else:
+            matcher_type = "exhaustive_matcher"
+            self.log_emitted.emit(f"[COLMAP] CUDA Exhaustive Feature Matching 実行中 (GPU: {gpu_indices_str}, Guided: {prec.enable_guided_matching})...")
+            cmd_match = [
+                self.config.colmap_binary, matcher_type,
+                "--database_path", str(database_path),
+                "--SiftMatching.use_gpu", "1" if hw.colmap_use_gpu else "0",
+                "--SiftMatching.gpu_index", gpu_indices_str,
+                "--SiftMatching.guided_matching", "1" if prec.enable_guided_matching else "0",
+            ]
         self._exec_cmd(cmd_match)
 
         # Stage 3: 疎な点群再構築 (Incremental Mapper / SfM / Bundle Adjustment 最適化)
@@ -329,6 +344,31 @@ class ReconstructionPipeline(QObject):
             except Exception as e:
                 self.log_emitted.emit(f"[OpenMVS 警告] RefineMesh スキップ (通常メッシュを使用): {e}")
 
+        # Stage 6.8: フルカラーテクスチャベイキング (TextureMesh)
+        clean_ext = self._normalize_format(output_format)
+        texture_exe = os.path.join(self.config.openmvs_dir, "TextureMesh.exe" if os.name == 'nt' else "TextureMesh")
+        has_textured_output = False
+        if clean_ext in ("obj", "gltf") and os.path.exists(texture_exe) and dense_scene_file.exists() and raw_ply_path.exists():
+            self.progress_updated.emit(90, "写真テクスチャを高精細ベイキング中 (TextureMesh)...")
+            self.log_emitted.emit("[OpenMVS] 写真テクスチャを 3D メッシュへフルカラー投影中 (TextureMesh)...")
+            cmd_texture = [
+                texture_exe,
+                "-w", str(dense_dir),
+                "-i", "scene_dense.mvs",
+                "-m", raw_ply_path.name,
+                "-o", f"scene_textured.{clean_ext}",
+                "--export-type", clean_ext,
+            ]
+            try:
+                self._exec_cmd(cmd_texture, cwd=str(dense_dir))
+                textured_out = dense_dir / f"scene_textured.{clean_ext}"
+                if textured_out.exists() and textured_out.stat().st_size > 0:
+                    raw_ply_path = textured_out
+                    has_textured_output = True
+                    self.log_emitted.emit(f"[OpenMVS] ✨ フルカラーテクスチャ ({clean_ext.upper()}) の生成に成功しました。")
+            except Exception as e:
+                self.log_emitted.emit(f"[OpenMVS 警告] TextureMesh スキップ: {e}")
+
         # Stage 7: 後処理 (Watertight化 & ArUcoスケール校正 & エクスポート)
         self.progress_updated.emit(92, "ArUcoスケール校正 & 水密化 (Watertight)...")
         if not raw_ply_path.exists():
@@ -344,9 +384,18 @@ class ReconstructionPipeline(QObject):
 
         mesh, report = POST_PROCESSOR.process_model(raw_ply_path, scale_factor=scale)
 
-        clean_ext = self._normalize_format(output_format)
         final_mesh_path = work_dir / f"solidforge_model.{clean_ext}"
         mesh.export(str(final_mesh_path))
+
+        # OBJ/GLTF テクスチャマテリアルファイルを作業ディレクトリ直下へ同期
+        if has_textured_output:
+            for related in dense_dir.glob("scene_textured*.*"):
+                if related.suffix.lower() in (".mtl", ".jpg", ".png"):
+                    dest_asset = work_dir / related.name.replace("scene_textured", "solidforge_model")
+                    try:
+                        shutil.copyfile(str(related), str(dest_asset))
+                    except Exception:
+                        pass
 
         return final_mesh_path, report
 
@@ -426,7 +475,14 @@ class ReconstructionPipeline(QObject):
             if not line and process.poll() is not None:
                 break
             if line:
-                self.log_emitted.emit(line.strip())
+                cleaned = line.strip()
+                self.log_emitted.emit(cleaned)
+                if "Registering image #" in cleaned or "Registering image [" in cleaned:
+                    self.progress_updated.emit(48, f"カメラ位置姿勢推定中: {cleaned}")
+                elif "Densifying depth map" in cleaned or "Processing image [" in cleaned:
+                    self.progress_updated.emit(75, f"高密度点群生成中: {cleaned}")
+                elif "Extracting features" in cleaned:
+                    self.progress_updated.emit(20, f"特徴点抽出中: {cleaned}")
 
         if process.returncode != 0:
             raise RuntimeError(f"コマンドがステータスコード {process.returncode} で終了しました: {' '.join(cmd)}")

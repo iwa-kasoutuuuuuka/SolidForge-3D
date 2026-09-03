@@ -3,7 +3,7 @@ SolidForge 3D - 3D Print Post-Processor (3Dプリント最適化 & 後処理モ�
 ArUcoマーカーによる実寸1:1 (mm) スケール校正 & 水密化 (Watertight / Hole Filling / Non-manifold修復)
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 import cv2
@@ -12,6 +12,7 @@ import trimesh
 from trimesh import repair
 
 from solidforge.config import CONFIG, PostProcessingConfig
+from solidforge.core.geometry_prep import GEOMETRY_PREP
 
 
 @dataclass
@@ -26,16 +27,23 @@ class PrintabilityReport:
     surface_area_cm2: float
     estimated_weight_pla_g: float  # PLA密度 1.24 g/cm3 換算
     scale_factor_applied: float
-    warnings: List[str]
+    overhang_area_ratio_pct: float = 0.0  # サポート材が必要な45度以上急傾斜面の面積比率
+    warnings: List[str] = field(default_factory=list)
+
+    @property
+    def has_critical_overhang(self) -> bool:
+        return self.overhang_area_ratio_pct > 15.0
 
     @property
     def summary_text_ja(self) -> str:
         status = "【合格】3Dスライサー投入可能 (完全水密)" if self.is_watertight else "【要確認】非水密メッシュ"
         dim_x, dim_y, dim_z = self.dimensions_mm
+        overhang_str = f"⚠️ 要サポート材 (面積比 {self.overhang_area_ratio_pct:.1f}%)" if self.has_critical_overhang else f"良好 (急傾斜 {self.overhang_area_ratio_pct:.1f}%)"
         return (
             f"=== 3Dプリント適性診断レポート ===\n"
             f"ステータス: {status}\n"
             f"実寸外形寸法: {dim_x:.1f} x {dim_y:.1f} x {dim_z:.1f} mm\n"
+            f"オーバーハング傾斜(>45°): {overhang_str}\n"
             f"体積: {self.volume_cm3:.2f} cm³ | 表面積: {self.surface_area_cm2:.2f} cm²\n"
             f"推定フィラメント重量 (PLA 100%): {self.estimated_weight_pla_g:.1f} g\n"
             f"ポリゴン面数: {self.face_count:,} 面 | 頂点数: {self.vertex_count:,} 点\n"
@@ -259,11 +267,16 @@ class MeshPostProcessor:
         # PLA密度 1.24 g/cm3
         weight_g = volume_cm3 * 1.24
 
+        # オーバーハング傾斜角診断 (サポート材判定)
+        overhang_ratio, _ = GEOMETRY_PREP.analyze_overhangs(mesh, threshold_angle_deg=45.0)
+
         warnings: List[str] = []
         if not mesh.is_watertight:
             warnings.append("完全な水密化が完了していません。スライサーで微小な穴を自動修復してください。")
         if any(d < 1.0 for d in dim_mm):
             warnings.append("モデルの厚みが1mm未満の箇所があります。3Dプリント時に破損する恐れがあります。")
+        if overhang_ratio > 15.0:
+            warnings.append(f"オーバーハング面（傾斜45°以上）が全体の {overhang_ratio:.1f}% あります。スライサーでサポート材を有効にしてください。")
 
         report = PrintabilityReport(
             is_watertight=bool(mesh.is_watertight),
@@ -275,6 +288,7 @@ class MeshPostProcessor:
             surface_area_cm2=round(area_cm2, 2),
             estimated_weight_pla_g=round(weight_g, 2),
             scale_factor_applied=applied_scale,
+            overhang_area_ratio_pct=round(overhang_ratio, 2),
             warnings=warnings,
         )
 

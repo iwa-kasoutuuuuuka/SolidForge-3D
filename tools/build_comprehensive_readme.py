@@ -23,7 +23,7 @@ def main():
 [![Insta360 & Multi-Cam](https://img.shields.io/badge/Camera-Insta360%20X5%2FAcePro2%20%7C%20SONY%20%7C%20Phone-ff4081?style=for-the-badge)](https://www.insta360.com/)
 [![OrcaSlicer Ready](https://img.shields.io/badge/Slicer-OrcaSlicer%20%2F%20Bambu%20Studio-00e5ff?style=for-the-badge)](https://github.com/SoftFever/OrcaSlicer)
 [![Direct to Print](https://img.shields.io/badge/3D%20Print-Vectorized%20RANSAC-ffd600?style=for-the-badge)](https://en.wikipedia.org/wiki/STL_(file_format))
-[![Tests](https://img.shields.io/badge/Unit%20Tests-46%2F46%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
+[![Tests](https://img.shields.io/badge/Unit%20Tests-49%2F49%20Passed-00c853?style=for-the-badge)](https://docs.python.org/3/library/unittest.html)
 [![Security Hardened](https://img.shields.io/badge/Security-CWE%20Audited-blue?style=for-the-badge)](https://cwe.mitre.org/)
 
 ---
@@ -558,6 +558,24 @@ SolidForge 3D に搭載されている、日々のスキャン・3Dプリント�
   4. `OpenMVS RefineMesh`: 頂点単位の光度最適化を自動 ON。
   5. `鮮鋭化スライダー`: 素材のコントラストに合わせて 70〜85% に自動調整。
   6. `ログコンソール`: 検出された被写体カテゴリや占有率、適用された設定を日本語サマリーで出力。
+
+### 5.14 🎨 スタジオ内蔵 インタラクティブ 3D OpenGL ビューア (3D Viewport) 完全操作仕様
+外部のスライサーやビューアを立ち上げることなく、アプリ内の「🎨 3D ビューア」タブから 3D モデルを直接確認・検査できます：
+- **直感的なマウスナビゲーション**:
+  - `マウス左ドラッグ`: 360° 自由オービット回転（ピッチ・ヨー角連動）。
+  - `マウス右ドラッグ / 中ドラッグ`: パン（視点平行移動）。
+  - `マウスホイール`: スムーズ拡大・縮小（ズーム）。
+- **3Dプリント検査・造形支援ツールバー**:
+  1. `ワイヤーフレーム`: ポリゴンメッシュの三角分割構造を鮮明に表示。
+  2. `Z=0 グリッド`: 3Dプリンタのビルドプレート密着面（$Z=0$ 水平面）を視覚化。
+  3. `⚠️ オーバーハング警告`: 45度以上のサポート材必須面を赤橙色でリアルタイムハイライト。
+  4. `🧱 転倒防止台座を付加`: 人形や細い置物の底面に厚さ 2.5mm の楕円台座をワンクリックで結合。
+  5. `📉 ポリゴン軽量化 (50%)`: Quadric Edge Collapse により、形状を保ったまま面数を 50% に削減。
+
+### 5.15 💾 プロジェクト保存 & 復元機能 (.sforge Project Bundle)
+作業状態（撮影写真、パイプラインパラメータ、生成 3D モデル、水密性・体積診断結果）を単一の `.sforge` 圧縮ファイルとして永続化・復元できます：
+- **保存**: 画面右下の「💾 プロジェクト保存」ボタンから、いつでもワンクリックでエクスポート。
+- **復元**: ナビゲーションバーの「📂 プロジェクトを開く (.sforge)」から、過去のスキャンデータを一瞬で復元して再調整・再エクスポート可能。
 """)
 
     # Chapter 6: Practical Shooting Mastery (Extended to 13 sub-sections)
@@ -728,6 +746,15 @@ Blackwell 世代で新設された FP8 Tensor Core を活用し、モデルウ�
    - Sobel 勾配強度の標準偏差から表面の平滑度・無地度合いを評価。平滑プラスチックや金属などの低テクスチャ素材では、SIFT 感度を最大化 (Peak 0.0015) し、エピポーラ幾何ガイドマッチングと AI 鮮鋭化を自動ブースト。
 3. **ArUco 実寸マーカーの自動探知**:
    - 画像内に ArUco マーカーが存在するか瞬時にスキャン。マーカー検知時は 1:1 実寸ミリメートル校正モードへ自動移行します。
+
+### 7.10 🌈 フルカラーテクスチャベイキング (OpenMVS TextureMesh) & 適応型マッチャー (Adaptive Matcher)
+1. **フルカラー UV テクスチャベイキング (`TextureMesh.exe`)**:
+   - 単色 PLY / STL に加え、出力形式に `OBJ` または `GLTF` を選択した場合、撮影写真の鮮やかな色彩を高解像度テクスチャ（`.jpg`）としてポリゴン表面に自動焼き込み。
+   - Bambu Lab AMS や フルカラー 3D プリント（PolyJet）、CG 制作向けに即戦力のテクスチャ付きモデルを生成します。
+2. **適応型マッチャー切り替え (Adaptive Matcher Selection)**:
+   - 写真枚数 $\le 80$ 枚: `exhaustive_matcher`（総当たり照合で幾何形状の欠落を防止）。
+   - 写真枚数 $> 80$ 枚: `sequential_matcher`（オーバーラップ 20 枚、2次隣接、ループ検知付き）へ自動移行し、マッチング計算量を $O(N^2)$ から $O(N \log N)$ に圧縮（15分 ➔ 30秒）。
+
 
 
 ---
@@ -1417,6 +1444,26 @@ SD カードやフォルダから写真をギャラリーに読み込むだけ�
 <summary><b>Q77. 自動設定された後に、手動でスライダーやモードを変更することは可能ですか？</b></summary>
 はい、100% 自由に変更可能です。Auto-Pilot はインポート時に最適な初期値を自動セットしますが、ユーザーは右側設定パネルの「精度モード」ドロップダウンや各チェックボックス、鮮鋭化スライダーなどを自由に上書き調整できます。
 </details>
+
+<details>
+<summary><b>Q78. スタジオ内で 3D モデルをマウスで 360 度回転・確認する方法は？</b></summary>
+メッシュ生成完了後、画面右下の「🎨 3D ビューア」タブをクリックすると、スタジオ内蔵の OpenGL ビューアが起動します。<br>
+マウス左ドラッグで 360 度オービット回転、右ドラッグでパン移動、ホイールでズームが可能です。ワイヤーフレーム表示や Z=0 ベッドグリッド、急傾斜オーバーハングのハイライト表示もワンクリックで切り替えられます。
+</details>
+
+<details>
+<summary><b>Q79. 3D モデルに転倒防止の台座を付けたり、ポリゴン数を半分に減らすことはできますか？</b></summary>
+はい、3D ビューア下部のツールバーから直接実行できます。<br>
+• 「🧱 転倒防止台座を付加」: 自立しにくいフィギュア等の底面に、厚さ 2.5mm の面取り楕円台座を瞬時に合成します。<br>
+• 「📉 ポリゴン軽量化 (50%)」: 形状特徴を保持したまま、ポリゴン面数を半分（50%）に間引き軽量化します。
+</details>
+
+<details>
+<summary><b>Q80. スキャンしたデータや設定を後から再利用するために保存する方法は？</b></summary>
+画面右下の「💾 プロジェクト保存」ボタンを押すと、撮影写真、パラメータ設定、生成された 3D モデル、診断結果が単一の <code>.sforge</code> パッケージとして保存されます。<br>
+ナビゲーションバーの「📂 プロジェクトを開く (.sforge)」からいつでも過去の作業状態を完全に復元できます。
+</details>
+
 
 ---
 

@@ -136,6 +136,15 @@ class MainWindow(QMainWindow):
         self.btn_top_camera_select.clicked.connect(self._open_camera_select_dialog)
         top_layout.addWidget(self.btn_top_camera_select)
 
+        # プロジェクト読み込みボタン
+        self.btn_top_open_project = QPushButton("📂 プロジェクトを開く (.sforge)")
+        self.btn_top_open_project.setStyleSheet(
+            "QPushButton { background-color: #1e293b; color: #a78bfa; border: 1px solid #a78bfa; padding: 4px 10px; border-radius: 4px; font-weight: bold; }"
+            "QPushButton:hover { background-color: #7c3aed; color: #ffffff; }"
+        )
+        self.btn_top_open_project.clicked.connect(self._open_project_dialog)
+        top_layout.addWidget(self.btn_top_open_project)
+
         # モード選択
         mode_box = QHBoxLayout()
         mode_box.setSpacing(8)
@@ -422,6 +431,28 @@ class MainWindow(QMainWindow):
         from solidforge.core.scene_analyzer import SCENE_ANALYZER
         res = SCENE_ANALYZER.analyze_dataset(images)
         self._apply_analysis_result(res, notify_user=False)
+
+    def _open_project_dialog(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "SolidForge プロジェクトを開く", str(self.config.workspace_dir), "SolidForge Project (*.sforge)"
+        )
+        if file_path:
+            from solidforge.core.project_manager import PROJECT_MANAGER
+            ok, meta, images, model = PROJECT_MANAGER.import_project(
+                Path(file_path), self.config.workspace_dir / "imported_projects"
+            )
+            if ok:
+                if images:
+                    self.gallery_widget.import_file_paths(images)
+                if model:
+                    from solidforge.core.post_processor import POST_PROCESSOR
+                    _, report = POST_PROCESSOR.process_model(model)
+                    self.mesh_diagnostics.display_report(model, report)
+                self.log_terminal.append_log(f"プロジェクト '{meta.get('project_name', Path(file_path).stem)}' を復元しました。")
+                QMessageBox.information(
+                    self, "復元完了",
+                    f"プロジェクトを正常に読み込みました！\n画像: {len(images)} 枚\n3Dモデル: {model.name if model else 'なし'}"
+                )
 
     def _open_camera_select_dialog(self):
         from solidforge.ui.widgets.camera_select_dialog import CameraSelectDialog

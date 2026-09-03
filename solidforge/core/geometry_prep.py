@@ -282,5 +282,138 @@ class GeometryPrep:
 
         return mesh
 
+    def analyze_overhangs(
+        self,
+        mesh: trimesh.Trimesh,
+        threshold_angle_deg: float = 45.0,
+    ) -> Tuple[float, np.ndarray]:
+        """
+        3Dプリント時にサポート材（Support Structures）が必要となる
+        急傾斜・オーバーハング面（下向き45度以上）を検出し、面積比率とマスクを算出します。
+
+        Args:
+            mesh: 入力メッシュ
+            threshold_angle_deg: オーバーハングと判定する限界角度 (度, デフォルト 45°)
+
+        Returns:
+            Tuple[float, np.ndarray]: (オーバーハング面積比率 %, 各ポリゴン面の真偽値マスク [F])
+        """
+        if mesh is None or len(mesh.faces) == 0:
+            return 0.0, np.zeros(0, dtype=bool)
+
+        normals = mesh.face_normals
+        areas = mesh.area_faces
+
+        # 水平から下向きへの角度: 法線の Z 成分が -sin(threshold) 未満のときにオーバーハング
+        # 例: 45度以上下向き -> nz < -sin(45°) = -0.7071
+        rad = math.radians(threshold_angle_deg)
+        limit_z = -math.sin(rad)
+
+        overhang_mask = normals[:, 2] < limit_z
+        total_area = float(np.sum(areas))
+        if total_area <= 1e-6:
+            return 0.0, overhang_mask
+
+        overhang_area = float(np.sum(areas[overhang_mask]))
+        overhang_ratio_pct = (overhang_area / total_area) * 100.0
+
+        return overhang_ratio_pct, overhang_mask
+
+    def add_base_pedestal(
+        self,
+        mesh: trimesh.Trimesh,
+        thickness_mm: float = 2.5,
+        margin_mm: float = 5.0,
+        shape: str = "ellipse",
+    ) -> trimesh.Trimesh:
+        """
+        細身のフィギュアや自立しにくい置物モデルの底面に、
+        転倒防止用の面取り台座（Pedestal / Base Stand）を自動合成し、Z=0 に再接地します。
+
+        Args:
+            mesh: 入力メッシュ
+            thickness_mm: 台座の厚み (mm, デフォルト 2.5mm)
+            margin_mm: モデル外形からの張り出し幅 (mm, デフォルト 5.0mm)
+            shape: 'ellipse' (円・楕円) または 'box' (角丸長方形)
+
+        Returns:
+            trimesh.Trimesh: 台座が一体化され Z=0 接地された 3D モデル
+        """
+        if mesh is None or len(mesh.faces) == 0:
+            return mesh
+
+        bounds = mesh.bounds
+        center_xy = mesh.centroid[:2]
+        min_z = float(bounds[0, 2])
+
+        extent_x = float(bounds[1, 0] - bounds[0, 0])
+        extent_y = float(bounds[1, 1] - bounds[0, 1])
+
+        rx = extent_x / 2.0 + margin_mm
+        ry = extent_y / 2.0 + margin_mm
+
+        if shape == "box":
+            ped = trimesh.creation.box(extents=[extent_x + margin_mm * 2, extent_y + margin_mm * 2, thickness_mm])
+            ped.apply_translation([center_xy[0], center_xy[1], min_z - thickness_mm / 2.0])
+        else:
+            # 円柱台座 (半径は最大半径)
+            r_max = max(rx, ry)
+            ped = trimesh.creation.cylinder(radius=r_max, height=thickness_mm, sections=48)
+            ped.apply_translation([center_xy[0], center_xy[1], min_z - thickness_mm / 2.0])
+
+        try:
+            combined = trimesh.util.concatenate([mesh, ped])
+            # 最下面を Z=0 に正確にアライメント
+            combined.apply_translation([0.0, 0.0, -combined.bounds[0, 2]])
+            repair.fix_normals(combined)
+            return combined
+        except Exception:
+            return mesh
+
+    def decimate_mesh(
+        self,
+        mesh: trimesh.Trimesh,
+        target_face_count: Optional[int] = None,
+        target_reduction: Optional[float] = None,
+    ) -> trimesh.Trimesh:
+        """
+        Quadric Edge Collapse (QEM) アルゴリズムにより、
+        表面の幾何形状特徴を維持しながらポリゴン面数を安全に削減（軽量化）します。
+
+        Args:
+            mesh: 入力メッシュ
+            target_face_count: 目標ポリゴン面数 (例: 50000)
+            target_reduction: 削減比率 0.0 ~ 1.0 (例: 0.5 で50%削減)
+
+        Returns:
+            trimesh.Trimesh: 軽量化された 3D モデル
+        """
+        if mesh is None or len(mesh.faces) == 0:
+            return mesh
+
+        n_faces = len(mesh.faces)
+        if target_face_count is not None and target_face_count > 0:
+            if target_face_count >= n_faces:
+                return mesh
+            reduction = 1.0 - (target_face_count / float(n_faces))
+        elif target_reduction is not None and 0.0 < target_reduction < 1.0:
+            reduction = target_reduction
+        else:
+            return mesh
+
+        reduction = max(0.01, min(0.98, reduction))
+
+        try:
+            import fast_simplification
+            verts, faces = fast_simplification.simplify(
+                mesh.vertices, mesh.faces, target_reduction=reduction
+            )
+            decimated = trimesh.Trimesh(vertices=verts, faces=faces, process=True)
+            repair.fix_normals(decimated)
+            return decimated
+        except Exception:
+            return mesh
+
 
 GEOMETRY_PREP = GeometryPrep()
+

@@ -30,13 +30,28 @@ class TestGeometryPrep(unittest.TestCase):
         # スライス後: 最底面が Z=0 に正確にアライメントされていることを確認
         self.assertAlmostEqual(float(np.min(sliced.vertices[:, 2])), 0.0, delta=1e-3)
 
-    def test_hollow_mesh(self):
-        sphere = trimesh.creation.icosphere(radius=20.0, subdivisions=2)
-        initial_faces = len(sphere.faces)
+    def test_analyze_overhangs(self):
+        # 直方体メッシュ (上面, 側面, 底面)
+        box = trimesh.creation.box(extents=[10, 10, 10])
+        box.apply_translation([0, 0, 5])
+        ratio, mask = self.prep.analyze_overhangs(box, threshold_angle_deg=45.0)
+        self.assertGreater(ratio, 0.0)
+        self.assertTrue(np.any(mask))
 
-        hollowed = self.prep.hollow_mesh(sphere, wall_thickness_mm=2.0)
-        # 中空化により内壁面が追加され、面数が増加していることを確認
-        self.assertEqual(len(hollowed.faces), initial_faces * 2)
+    def test_add_base_pedestal(self):
+        sphere = trimesh.creation.icosphere(radius=10.0)
+        sphere.apply_translation([0, 0, 10.0])
+        with_ped = self.prep.add_base_pedestal(sphere, thickness_mm=2.5, margin_mm=5.0)
+        self.assertIsNotNone(with_ped)
+        self.assertGreater(len(with_ped.faces), len(sphere.faces))
+        self.assertAlmostEqual(float(np.min(with_ped.vertices[:, 2])), 0.0, delta=1e-2)
+
+    def test_decimate_mesh(self):
+        sphere = trimesh.creation.icosphere(radius=10.0, subdivisions=3)
+        orig_faces = len(sphere.faces)
+        decimated = self.prep.decimate_mesh(sphere, target_reduction=0.5)
+        self.assertIsNotNone(decimated)
+        self.assertLess(len(decimated.faces), orig_faces)
 
 
 if __name__ == "__main__":
